@@ -674,7 +674,7 @@
                 <label>WEBHOOK</label>
                 <input type="text" id="webhook-url" class="webhook-input" value="http://localhost:5678/webhook/jarvis-chat" placeholder="URL Webhook n8n...">
             </div>
-            <button class="preset-btn" onclick="setWebhook('http://localhost:5678/webhook/jarvis-chat')">n8n Test</button>
+            <button class="preset-btn" onclick="setWebhook('http://localhost:5678/webhook-test/jarvis-chat')">n8n Test</button>
             <button class="preset-btn" onclick="setWebhook('http://localhost:5678/webhook/jarvis-chat')">n8n Prod</button>
             <button class="preset-btn" onclick="setWebhook('http://localhost:3000/mock-n8n/jarvis-chat')">Mock Demo</button>
             <span class="status-badge" id="net-status">ONLINE</span>
@@ -977,7 +977,7 @@
         // --- 2. SENSOR REALTIME FETCH DARI /api/sensor (MURNI HARDWARE ESP32) ---
         async function fetchRealSensorData() {
             try {
-                const res = await fetch('/api/sensor');
+                const res = await fetch('https://iot-puce-nine.vercel.app/api/sensor');
                 if (res.ok) {
                     const data = await res.json();
                     if (data.sensor && data.sensor.suhu !== null && data.sensor.suhu !== undefined) {
@@ -1014,7 +1014,7 @@
         // --- FETCH REALTIME STATUS 6 LED DARI /api/led ---
         async function fetchRealLedData() {
             try {
-                const res = await fetch('/api/led');
+                const res = await fetch('https://iot-puce-nine.vercel.app/api/led');
                 if (res.ok) {
                     const data = await res.json();
                     if (data.peralatan) {
@@ -1063,7 +1063,7 @@
             playAudioBeep(applianceState[id] ? 880 : 440);
 
             try {
-                await fetch('/api/led', {
+                await fetch('https://iot-puce-nine.vercel.app/api/led', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1085,7 +1085,7 @@
             playAudioBeep(isTargetOn ? 900 : 300);
 
             try {
-                await fetch('/api/led', {
+                await fetch('https://iot-puce-nine.vercel.app/api/led', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ all: state })
@@ -1590,7 +1590,21 @@
                 touched = true;
             }
 
-            if (touched) updateApplianceUI();
+            if (touched) {
+                updateApplianceUI();
+                fetch('https://iot-puce-nine.vercel.app/api/led', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lampu: applianceState[1] ? 'ON' : 'OFF',
+                        tv: applianceState[2] ? 'ON' : 'OFF',
+                        kulkas: applianceState[3] ? 'ON' : 'OFF',
+                        mesin_cuci: applianceState[4] ? 'ON' : 'OFF',
+                        ac: applianceState[5] ? 'ON' : 'OFF',
+                        radio: applianceState[6] ? 'ON' : 'OFF'
+                    })
+                }).catch(e => console.warn(e));
+            }
         }
 
         // --- KIRIM PERINTAH KE N8N WEBHOOK ---

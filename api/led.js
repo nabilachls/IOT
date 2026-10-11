@@ -23,9 +23,84 @@ export default function handler(req, res) {
         return;
     }
 
-    // GET: Membaca status 6 LED (dipanggil oleh ESP32 untuk menyalakan/mematikan pin GPIO LED)
+    let body = req.body || {};
+    if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch(e) { body = { text: body }; }
+    }
+    const query = req.query || {};
+
+    // Ambil parameter alat dan status dari body atau query string
+    let targetAlat = (body.alat || query.alat || '').toLowerCase();
+    let targetStatus = (body.status || query.status || '').toUpperCase();
+
+    // Natural Language fallback jika alat/status tidak terisi langsung
+    const rawText = (body.message || body.command || body.text || '').toLowerCase();
+    if (!targetAlat && rawText) {
+        if (rawText.includes('lampu')) targetAlat = 'lampu';
+        else if (rawText.includes('tv') || rawText.includes('televisi')) targetAlat = 'tv';
+        else if (rawText.includes('kulkas')) targetAlat = 'kulkas';
+        else if (rawText.includes('mesin cuci') || rawText.includes('cuci')) targetAlat = 'mesin_cuci';
+        else if (rawText.includes('ac') || rawText.includes('pendingin')) targetAlat = 'ac';
+        else if (rawText.includes('radio')) targetAlat = 'radio';
+        else if (rawText.includes('semua')) body.all = rawText.includes('mati') ? 'OFF' : 'ON';
+
+        if (!targetStatus) {
+            targetStatus = (rawText.includes('mati') || rawText.includes('padam') || rawText.includes('off')) ? 'OFF' : 'ON';
+        }
+    }
+
+    // Aksi 1: Ubah status jika ada status yang dikirimkan (baik via POST maupun GET)
+    if (targetAlat && (targetStatus === 'ON' || targetStatus === 'OFF' || targetStatus === '1' || targetStatus === '0')) {
+        let key = targetAlat;
+        if (key.includes('mesin') || key.includes('cuci')) key = 'mesin_cuci';
+        else if (key.includes('lampu')) key = 'lampu';
+        else if (key.includes('tv') || key.includes('televisi')) key = 'tv';
+        else if (key.includes('kulkas')) key = 'kulkas';
+        else if (key.includes('ac')) key = 'ac';
+        else if (key.includes('radio')) key = 'radio';
+
+        if (ledState[key] !== undefined) {
+            ledState[key] = (targetStatus === 'ON' || targetStatus === '1') ? 'ON' : 'OFF';
+            return res.status(200).json({
+                status: "success",
+                pesan: `${key} berhasil diubah menjadi ${ledState[key]}`,
+                alat: key,
+                kondisi: ledState[key],
+                peralatan: ledState
+            });
+        }
+    }
+
+    // Aksi 2: Semua alat sekaligus
+    if (body.all !== undefined || query.all !== undefined) {
+        const allSt = (((body.all || query.all).toUpperCase() === 'ON') || (body.all === '1')) ? 'ON' : 'OFF';
+        Object.keys(ledState).forEach(k => ledState[k] = allSt);
+        return res.status(200).json({
+            status: "success",
+            pesan: `Seluruh 6 peralatan telah diubah menjadi ${allSt}`,
+            peralatan: ledState
+        });
+    }
+
+    // Aksi 3: Multi-keys object { lampu: 'ON', tv: 'OFF' }
+    let changed = false;
+    Object.keys(ledState).forEach(k => {
+        if (body[k] !== undefined) {
+            ledState[k] = (body[k].toString().toUpperCase() === 'ON' || body[k] === '1') ? 'ON' : 'OFF';
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        return res.status(200).json({
+            status: "success",
+            pesan: "Status peralatan berhasil diperbarui",
+            peralatan: ledState
+        });
+    }
+
+    // Default GET / response status peralatan terkini (untuk ESP32 polling)
     if (req.method === 'GET') {
-        // Mendukung filter spesifik misal ?alat=lampu
         const { alat } = req.query;
         if (alat && ledState[alat.toLowerCase()] !== undefined) {
             return res.status(200).json({
@@ -41,70 +116,8 @@ export default function handler(req, res) {
         });
     }
 
-    // POST: Mengubah status LED (dipanggil oleh n8n AI Agent ketika ada perintah suara)
-    if (req.method === 'POST') {
-        const body = req.body || {};
-        const query = req.query || {};
-
-        // Format 1: { "alat": "lampu", "status": "ON" } atau via query ?alat=lampu&status=ON
-        const targetAlat = (body.alat || query.alat || '').toLowerCase();
-        const targetStatus = (body.status || query.status || '').toUpperCase();
-
-        if (targetAlat) {
-            // Normalisasi nama alat
-            let key = targetAlat;
-            if (key.includes('mesin') || key.includes('cuci')) key = 'mesin_cuci';
-            else if (key.includes('lampu')) key = 'lampu';
-            else if (key.includes('tv') || key.includes('televisi')) key = 'tv';
-            else if (key.includes('kulkas')) key = 'kulkas';
-            else if (key.includes('ac')) key = 'ac';
-            else if (key.includes('radio')) key = 'radio';
-
-            if (ledState[key] !== undefined) {
-                ledState[key] = (targetStatus === 'ON' || targetStatus === '1' || targetStatus === 'TRUE') ? 'ON' : 'OFF';
-                return res.status(200).json({
-                    status: "success",
-                    pesan: `${key} berhasil diubah menjadi ${ledState[key]}`,
-                    alat: key,
-                    kondisi: ledState[key],
-                    peralatan: ledState
-                });
-            }
-        }
-
-        // Format 2: Perintah semua alat sekaligus { "all": "ON" }
-        if (body.all !== undefined || query.all !== undefined) {
-            const allSt = ((body.all || query.all).toUpperCase() === 'ON') ? 'ON' : 'OFF';
-            Object.keys(ledState).forEach(k => ledState[k] = allSt);
-            return res.status(200).json({
-                status: "success",
-                pesan: `Seluruh 6 peralatan telah diubah menjadi ${allSt}`,
-                peralatan: ledState
-            });
-        }
-
-        // Format 3: Kirim objek langsung { "lampu": "ON", "tv": "OFF" }
-        let changed = false;
-        Object.keys(ledState).forEach(k => {
-            if (body[k] !== undefined) {
-                ledState[k] = body[k].toUpperCase() === 'ON' ? 'ON' : 'OFF';
-                changed = true;
-            }
-        });
-
-        if (changed) {
-            return res.status(200).json({
-                status: "success",
-                pesan: "Status peralatan berhasil diperbarui",
-                peralatan: ledState
-            });
-        }
-
-        return res.status(400).json({
-            status: "error",
-            message: "Parameter tidak dikenali. Gunakan { alat: 'lampu', status: 'ON' } atau { all: 'ON' }."
-        });
-    }
-
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(200).json({
+        status: "success",
+        peralatan: ledState
+    });
 }

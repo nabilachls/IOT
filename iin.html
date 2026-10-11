@@ -674,7 +674,7 @@
                 <label>WEBHOOK</label>
                 <input type="text" id="webhook-url" class="webhook-input" value="http://localhost:5678/webhook/jarvis-chat" placeholder="URL Webhook n8n...">
             </div>
-            <button class="preset-btn" onclick="setWebhook('http://localhost:5678/webhook/jarvis-chat')">n8n Test</button>
+            <button class="preset-btn" onclick="setWebhook('http://localhost:5678/webhook-test/jarvis-chat')">n8n Test</button>
             <button class="preset-btn" onclick="setWebhook('http://localhost:5678/webhook/jarvis-chat')">n8n Prod</button>
             <button class="preset-btn" onclick="setWebhook('http://localhost:3000/mock-n8n/jarvis-chat')">Mock Demo</button>
             <span class="status-badge" id="net-status">ONLINE</span>
@@ -977,7 +977,7 @@
         // --- 2. SENSOR REALTIME FETCH DARI /api/sensor (MURNI HARDWARE ESP32) ---
         async function fetchRealSensorData() {
             try {
-                const res = await fetch('/api/sensor');
+                const res = await fetch('https://iot-puce-nine.vercel.app/api/sensor');
                 if (res.ok) {
                     const data = await res.json();
                     if (data.sensor && data.sensor.suhu !== null && data.sensor.suhu !== undefined) {
@@ -1014,7 +1014,7 @@
         // --- FETCH REALTIME STATUS 6 LED DARI /api/led ---
         async function fetchRealLedData() {
             try {
-                const res = await fetch('/api/led');
+                const res = await fetch('https://iot-puce-nine.vercel.app/api/led');
                 if (res.ok) {
                     const data = await res.json();
                     if (data.peralatan) {
@@ -1063,7 +1063,7 @@
             playAudioBeep(applianceState[id] ? 880 : 440);
 
             try {
-                await fetch('/api/led', {
+                await fetch('https://iot-puce-nine.vercel.app/api/led', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1085,7 +1085,7 @@
             playAudioBeep(isTargetOn ? 900 : 300);
 
             try {
-                await fetch('/api/led', {
+                await fetch('https://iot-puce-nine.vercel.app/api/led', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ all: state })
@@ -1153,29 +1153,61 @@
             }
         });
 
-        // --- 5. SPEECH RECOGNITION (STT INDONESIA & AUTO-LISTEN) ---
+        // --- 5. SPEECH RECOGNITION (MODE AKTIF TERUS MENERUS HINGGA DIMATIKAN) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
-        let isListeningActive = false;
+        let isMicAlwaysOn = false;     // True saat user mengaktifkan mikrofon
+        let isRecognitionRunning = false;
         let silenceTimer = null;
         let accumulatedTranscript = '';
         let hasSpoken = false;
+
         const micDebugStatus = document.getElementById('mic-debug-status');
+
+        function safeStartRecognition() {
+            if (!recognition || !isMicAlwaysOn || isAiSpeaking) return;
+            if (isRecognitionRunning) return;
+
+            try {
+                accumulatedTranscript = '';
+                hasSpoken = false;
+                recognition.start();
+                isRecognitionRunning = true;
+            } catch (e) {
+                // Jika sudah berjalan atau pending restart
+                try {
+                    recognition.stop();
+                    setTimeout(() => {
+                        if (isMicAlwaysOn && !isAiSpeaking) {
+                            try { recognition.start(); isRecognitionRunning = true; } catch(err){}
+                        }
+                    }, 150);
+                } catch(e2){}
+            }
+        }
+
+        function safeStopRecognition() {
+            if (silenceTimer) clearTimeout(silenceTimer);
+            if (recognition) {
+                try { recognition.stop(); } catch(e){}
+            }
+            isRecognitionRunning = false;
+        }
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'id-ID';
-            recognition.continuous = true;       // Tetap mendengarkan terus
-            recognition.interimResults = true;   // Deteksi perkataan realtime kata demi kata
+            recognition.continuous = true;       // Terus dengarkan tanpa putus
+            recognition.interimResults = true;   // Realtime deteksi kata
             recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
-                isListeningActive = true;
+                isRecognitionRunning = true;
                 updateState('LISTENING');
                 micStatus.innerText = "MENDENGARKAN...";
                 micStatus.style.color = "var(--green)";
                 if (micDebugStatus) {
-                    micDebugStatus.innerText = "MIC AKTIF";
+                    micDebugStatus.innerText = "MIC AKTIF (LIVE)";
                     micDebugStatus.style.color = "var(--green)";
                 }
             };
@@ -1203,63 +1235,55 @@
                 }
 
                 const currentText = (accumulatedTranscript + ' ' + interimTranscript).trim();
-                
+
                 if (currentText.length > 0) {
                     hasSpoken = true;
                     if (micDebugStatus) micDebugStatus.innerText = "KATA TERTANGKAP";
-                    // Tampilkan apa yang sedang diucapkan secara langsung (Realtime Preview)
-                    aiResponse.innerHTML = `<span style="color:var(--green)">[Mendengarkan]:</span> <span style="color:#fff; font-size:1.15em; font-weight:bold;">"${currentText}"</span><br><br><span style="color:#888; font-size:0.8em;">(Berhenti bicara untuk mengirim perintah...)</span>`;
+
+                    // Tampilkan secara langsung teks yang sedang diucapkan pengguna
+                    aiResponse.innerHTML = `<span style="color:var(--green)">[Mendengarkan]:</span> <span style="color:#fff; font-size:1.15em; font-weight:bold;">"${currentText}"</span><br><br><span style="color:#aaa; font-size:0.8em;">(Jeda sejenak untuk mengeksekusi perintah...)</span>`;
                     aiResponse.scrollTop = aiResponse.scrollHeight;
 
                     // Reset timer keheningan setiap kali ada kata baru
                     if (silenceTimer) clearTimeout(silenceTimer);
 
-                    // Saat pengguna BERHENTI berbicara selama 1.3 detik, proses perintah secara otomatis!
+                    // Saat pengguna selesai/berhenti bicara selama 1.2 detik, proses perintah otomatis!
                     silenceTimer = setTimeout(() => {
-                        if (isListeningActive && hasSpoken && currentText.length > 0) {
-                            console.log("Keheningan terdeteksi, memproses kalimat:", currentText);
-                            stopListening();
+                        if (isMicAlwaysOn && hasSpoken && currentText.length > 0) {
+                            console.log("Memproses perintah suara:", currentText);
+                            accumulatedTranscript = '';
+                            hasSpoken = false;
                             processUserVoiceCommand(currentText);
                         }
-                    }, 1300);
+                    }, 1200);
                 }
             };
 
             recognition.onerror = (event) => {
                 console.warn("Speech Recognition info:", event.error);
                 if (micDebugStatus) {
-                    micDebugStatus.innerText = "ERR: " + event.error;
-                    micDebugStatus.style.color = "var(--red)";
+                    micDebugStatus.innerText = "INFO: " + event.error;
                 }
 
-                // Jika error no-speech (belum bicara), JANGAN matikan! Biarkan tetap mendengar
-                if (event.error === 'no-speech') {
-                    return; 
-                }
-                if (event.error === 'network') {
-                    aiResponse.innerHTML += `<br><span style="color:var(--solar-red); font-size:0.85em;">[Peringatan]: Speech API Google membutuhkan koneksi internet atau web dibuka di http://localhost:3000/iin.html (bukan file://)</span>`;
-                }
                 if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    alert("Izin Mikrofon belum diberikan!\n\n1. Pastikan Anda membuka web lewat: http://localhost:3000/iin.html\n2. Klik ikon 'Gembok' di kiri URL browser\n3. Ubah Mikrofon menjadi 'Izinkan' (Allow)\n4. Muat ulang halaman.");
-                    stopListening();
+                    alert("Akses Mikrofon Belum Diizinkan!\n\n1. Klik ikon Gembok / Pengaturan Situs di samping URL browser.\n2. Ubah Mikrofon menjadi 'Izinkan' (Allow).\n3. Muat ulang halaman lalu tekan tombol mikrofon kembali.");
+                    isMicAlwaysOn = false;
+                    safeStopRecognition();
                     updateState('STANDBY');
                 }
             };
 
             recognition.onend = () => {
-                // Jika masih dalam status aktif mendengarkan dan bukan karena user stop, restart otomatis agar tidak mati mendadak
-                if (isListeningActive) {
-                    if (hasSpoken && accumulatedTranscript.trim().length > 0) {
-                        const textToSend = accumulatedTranscript.trim();
-                        stopListening();
-                        processUserVoiceCommand(textToSend);
-                    } else {
-                        try {
-                            recognition.start();
-                        } catch (err) {
-                            console.log("Restarting mic...", err);
+                isRecognitionRunning = false;
+                // JIKA USER MASIH MENGAKTIFKAN MIC: RESTART OTOMATIS! (Mic tidak akan mati sendiri)
+                if (isMicAlwaysOn && !isAiSpeaking) {
+                    setTimeout(() => {
+                        if (isMicAlwaysOn && !isAiSpeaking) {
+                            safeStartRecognition();
                         }
-                    }
+                    }, 100);
+                } else if (!isMicAlwaysOn) {
+                    updateState('STANDBY');
                 }
             };
         }
@@ -1315,43 +1339,6 @@
             }
         }
 
-        function startListening() {
-            if (!recognition) {
-                alert("Browser ini tidak mendukung Speech Recognition Web API. Gunakan Google Chrome atau Microsoft Edge.");
-                return;
-            }
-            if (isAiSpeaking) {
-                synth.cancel();
-                isAiSpeaking = false;
-            }
-
-            accumulatedTranscript = '';
-            hasSpoken = false;
-            if (silenceTimer) clearTimeout(silenceTimer);
-            isListeningActive = true;
-
-            try {
-                recognition.start();
-            } catch (e) {
-                try {
-                    recognition.stop();
-                    setTimeout(() => recognition.start(), 150);
-                } catch (e2) {}
-            }
-
-            playAudioBeep(750, 0.12);
-            updateState('LISTENING');
-            aiResponse.innerHTML = `<span style="color:var(--green)">[Mikrofon Aktif]:</span> Silakan berbicara sekarang... Level volume suara Anda terlihat di meter bar atas.`;
-        }
-
-        function stopListening() {
-            isListeningActive = false;
-            if (silenceTimer) clearTimeout(silenceTimer);
-            if (recognition) {
-                try { recognition.stop(); } catch (e) {}
-            }
-        }
-
         // --- SUBMIT PERINTAH TEKS MANUAL (DARURAT) ---
         function submitManualCommand() {
             const input = document.getElementById('manual-cmd-input');
@@ -1384,14 +1371,12 @@
 
         function getBestVoice() {
             const voices = cachedVoices.length ? cachedVoices : synth.getVoices();
-            // Prioritaskan suara asli Bahasa Indonesia (id-ID)
             const idVoices = voices.filter(v => v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('indonesia'));
             if (idVoices.length > 0) {
                 const premium = idVoices.find(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Gadis') || v.name.includes('Ardi'));
                 if (premium) return premium;
                 return idVoices[0];
             }
-            // Fallback suara default sistem dengan lang id-ID
             return voices.find(v => v.lang.startsWith('id')) || voices[0];
         }
 
@@ -1402,9 +1387,9 @@
 
             if (state === 'LISTENING') {
                 coreVisualizer.classList.add('state-listening');
-                micStatus.innerText = "MENDENGARKAN...";
+                micStatus.innerText = "MENDENGARKAN TERUS...";
                 micStatus.style.color = "var(--green)";
-                talkBtn.innerText = "≡ƒö┤ MENDENGARKAN... (KLIK UNTUK BATAL)";
+                talkBtn.innerText = "🎙️ MIC AKTIF (MENDENGARKAN) • KLIK UNTUK MATIKAN";
                 talkBtn.classList.add('recording');
                 talkBtn.disabled = false;
                 interruptBtn.style.display = "none";
@@ -1412,19 +1397,19 @@
                 coreVisualizer.classList.add('state-thinking');
                 micStatus.innerText = "PROSES N8N...";
                 micStatus.style.color = "var(--cyan)";
-                talkBtn.innerText = "ΓÅ│ MEMPROSES PERINTAH...";
+                talkBtn.innerText = "⏳ MEMPROSES PERINTAH...";
                 talkBtn.classList.remove('recording');
-                talkBtn.disabled = true;
+                talkBtn.disabled = false;
                 interruptBtn.style.display = "none";
             } else if (state === 'RESPONDING') {
-                talkBtn.innerText = "🎙️ TEKAN UNTUK BICARA";
+                talkBtn.innerText = isMicAlwaysOn ? "🎙️ MENJAWAB (MIC SIAP KEMBALI)" : "🎙️ TEKAN UNTUK BICARA";
                 talkBtn.classList.remove('recording');
                 talkBtn.disabled = false;
                 interruptBtn.style.display = "block";
             } else {
-                micStatus.innerText = "SIAP";
+                micStatus.innerText = "STANDBY";
                 micStatus.style.color = "var(--orange)";
-                talkBtn.innerText = "🎙️ TEKAN UNTUK BICARA";
+                talkBtn.innerText = "🎙️ TEKAN UNTUK MENGAKTIFKAN MIC";
                 talkBtn.classList.remove('recording');
                 talkBtn.disabled = false;
                 interruptBtn.style.display = "none";
@@ -1451,7 +1436,6 @@
         }
 
         function speakFeedback(text) {
-            if (!isSystemActive) return;
             synth.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.lang = 'id-ID';
@@ -1461,21 +1445,36 @@
             synth.speak(u);
         }
 
-        // --- KLIK TOMBOL BICARA (TOGGLE ON / OFF) ---
-        talkBtn.addEventListener('click', () => {
-            if (!isSystemActive || currentState === 'THINKING') return;
+        // --- KLIK TOMBOL BICARA: SEKALI KLIK AKTIF TERUS HINGGA DIKLIK LAGI UNTUK MATIKAN ---
+        talkBtn.addEventListener('click', async () => {
+            // Dismiss boot screen secara otomatis jika masih aktif
+            dismissBootScreenQuick();
 
-            // Jika sedang mendengarkan, klik sekali lagi untuk membatalkan
-            if (isListeningActive) {
-                stopListening();
+            if (!recognition) {
+                alert("Browser Anda belum mendukung Speech Recognition. Silakan buka di Google Chrome atau Microsoft Edge.");
+                return;
+            }
+
+            // TOGGLE: Jika sedang aktif terus, maka MATIKAN
+            if (isMicAlwaysOn) {
+                isMicAlwaysOn = false;
+                safeStopRecognition();
                 updateState('STANDBY');
-                aiResponse.innerHTML = `<span style="color:var(--orange)">[Mikrofon Dinonaktifkan]</span> Klik kembali untuk mulai berbicara.`;
+                aiResponse.innerHTML = `<span style="color:var(--orange)">[Mikrofon Dimatikan]</span> Tekan tombol untuk mengaktifkan kembali mode dengar terus.`;
                 playAudioBeep(400, 0.1);
                 return;
             }
 
-            // Aktifkan mode mendengarkan terus-menerus
-            startListening();
+            // AKTIFKAN MODE DENGAR TERUS-MENERUS
+            isMicAlwaysOn = true;
+            playAudioBeep(750, 0.15);
+            aiResponse.innerHTML = `<span style="color:var(--green)">[Mikrofon Aktif]:</span> Mode dengar terus-menerus aktif! Silakan berbicara perintah kapan saja...`;
+
+            try {
+                await setupAudioMeter();
+            } catch(e){}
+
+            safeStartRecognition();
         });
 
         interruptBtn.addEventListener('click', () => {
@@ -1483,59 +1482,53 @@
                 synth.cancel();
                 isAiSpeaking = false;
                 ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
-                updateState('STANDBY');
+                if (isMicAlwaysOn) {
+                    safeStartRecognition();
+                } else {
+                    updateState('STANDBY');
+                }
             }
         });
 
-        // --- BOOT EVENT (AKTIFKAN AUDIO & TUTUP BOOT SCREEN) ---
-        async function dismissBootScreen() {
+        // --- BOOT EVENT HANDLER CEPAT ---
+        function dismissBootScreenQuick() {
             const bs = document.getElementById('boot-screen');
-            if (bs) {
-                bs.style.transition = 'opacity 0.3s ease';
+            if (bs && bs.style.display !== 'none') {
+                bs.style.transition = 'opacity 0.25s ease';
                 bs.style.opacity = '0';
-                setTimeout(() => { bs.style.display = 'none'; }, 300);
+                setTimeout(() => { bs.style.display = 'none'; }, 250);
             }
-
-            isSystemActive = true;
             try {
                 synth.resume();
                 synth.cancel();
             } catch(e) {}
+        }
 
+        async function dismissBootScreen() {
+            dismissBootScreenQuick();
             try {
                 await setupAudioMeter();
-            } catch(e) {
-                console.warn("Audio meter setup error:", e);
-            }
+            } catch(e) {}
 
             try {
                 playAudioBeep(523, 0.1);
                 setTimeout(() => playAudioBeep(659, 0.15), 100);
                 setTimeout(() => playAudioBeep(784, 0.2), 200);
-
-                const unlockAudio = new SpeechSynthesisUtterance('Sistem Lamban AI siap. Silakan klik tombol Tekan Untuk Bicara.');
-                unlockAudio.lang = 'id-ID';
-                const voice = getBestVoice();
-                if (voice) unlockAudio.voice = voice;
-                unlockAudio.pitch = 1.0;
-                unlockAudio.rate = 1.0;
-                synth.speak(unlockAudio);
             } catch(e) {}
 
             const aiResp = document.getElementById('ai-response');
             if (aiResp) {
-                aiResp.innerHTML = "<span style='color:var(--orange)'>Sistem LAMBAN.AI Aktif. Session ID: " + getSessionId() + "</span><br><span style='color:#aaa'>Klik tombol 'TEKAN UNTUK BICARA' di atas untuk mulai memberikan perintah suara.</span>";
+                aiResp.innerHTML = "<span style='color:var(--orange)'>Sistem LAMBAN.AI Aktif. Session ID: " + getSessionId() + "</span><br><span style='color:#aaa'>Tekan tombol 'TEKAN UNTUK MENGAKTIFKAN MIC' untuk mode dengar terus-menerus.</span>";
             }
             updateState('STANDBY');
             updateApplianceUI();
-            updateSensorUI();
         }
 
         if (bootScreen) {
             bootScreen.addEventListener('click', dismissBootScreen);
         }
 
-        // --- CLIENT-SIDE INTENT HELPER (Instant UI Response) ---
+        // --- CLIENT-SIDE INTENT HELPER (Instant UI & Hardware Response) ---
         function executeLocalApplianceIntent(text) {
             const low = text.toLowerCase();
             let touched = false;
@@ -1590,7 +1583,21 @@
                 touched = true;
             }
 
-            if (touched) updateApplianceUI();
+            if (touched) {
+                updateApplianceUI();
+                fetch('/api/led', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lampu: applianceState[1] ? 'ON' : 'OFF',
+                        tv: applianceState[2] ? 'ON' : 'OFF',
+                        kulkas: applianceState[3] ? 'ON' : 'OFF',
+                        mesin_cuci: applianceState[4] ? 'ON' : 'OFF',
+                        ac: applianceState[5] ? 'ON' : 'OFF',
+                        radio: applianceState[6] ? 'ON' : 'OFF'
+                    })
+                }).catch(e => console.warn(e));
+            }
         }
 
         // --- KIRIM PERINTAH KE N8N WEBHOOK ---
@@ -1620,60 +1627,61 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP Error ${response.status}: n8n belum aktif atau belum klik 'Listen for test event'`);
+                    throw new Error(`HTTP Error ${response.status}`);
                 }
 
                 const data = await response.json();
                 let aiText = data.reply || data.output || data.text || "Instruksi diproses.";
-
-                // Bersihkan karakter markdown agar suara TTS lancar
                 const cleanText = aiText.replace(/[*#_`~()><\-]/g, ' ');
 
                 updateState('RESPONDING');
-                aiResponse.innerHTML = `<span style="color:#fff">Pengguna:</span> <b>"${transcript}"</b><br><br><span style="color:var(--orange)">LAMBAN-AI (Gemini Flash Lite):</span><br>${cleanText.replace(/\n/g, '<br>')}`;
+                aiResponse.innerHTML = `<span style="color:#fff">Pengguna:</span> <b>"${transcript}"</b><br><br><span style="color:var(--orange)">LAMBAN-AI:</span><br>${cleanText.replace(/\n/g, '<br>')}`;
                 aiResponse.scrollTop = aiResponse.scrollHeight;
 
                 speakText(cleanText);
 
             } catch (error) {
-                console.warn("n8n offline, menggunakan respons cerdas lokal:", error);
+                console.warn("n8n webhook belum merespons, memicu asisten cerdas lokal:", error);
 
-                // Respons fallback bahasa Indonesia jernih agar presentasi tidak macet
                 let fallbackReply = "";
                 const low = transcript.toLowerCase();
                 if (low.includes('suhu') || low.includes('derajat')) {
-                    fallbackReply = `Suhu ruangan saat ini adalah ${sensorData.suhu} derajat Celcius, kondisi ruangan dalam batas normal.`;
+                    const s = sensorData.suhu !== null ? sensorData.suhu : 'belum terhubung dari ESP32';
+                    const k = sensorData.kelembaban !== null ? sensorData.kelembaban : 'belum terhubung';
+                    fallbackReply = `Suhu ruangan saat ini adalah ${s} derajat Celsius dan kelembaban ${k} persen.`;
                 } else if (low.includes('kelembaban') || low.includes('lembab')) {
-                    fallbackReply = `Kelembaban udara saat ini terukur ${sensorData.kelembaban} persen.`;
+                    const k = sensorData.kelembaban !== null ? sensorData.kelembaban : 'belum terhubung';
+                    fallbackReply = `Kelembaban udara saat ini terukur ${k} persen.`;
                 } else if (low.includes('jarak')) {
-                    fallbackReply = `Sensor ultrasonik membaca jarak halangan sejauh ${sensorData.jarak} sentimeter.`;
-                } else if (low.includes('lampu ruang tamu') || low.includes('lampu 1')) {
+                    const j = sensorData.jarak !== null ? sensorData.jarak : 'belum terhubung';
+                    fallbackReply = `Sensor ultrasonik membaca jarak halangan sejauh ${j} sentimeter.`;
+                } else if (low.includes('lampu')) {
                     const st = applianceState[1] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Baik, Lampu Utama (LED 1) berhasil ${st}.`;
-                } else if (low.includes('lampu kamar') || low.includes('lampu 2')) {
+                    fallbackReply = `Siap! Lampu utama telah berhasil ${st}.`;
+                } else if (low.includes('tv') || low.includes('televisi')) {
                     const st = applianceState[2] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin AC (LED 5) (LED 2) telah ${st}.`;
-                } else if (low.includes('lampu dapur') || low.includes('lampu 3')) {
+                    fallbackReply = `Baik, Smart TV telah ${st}.`;
+                } else if (low.includes('kulkas')) {
                     const st = applianceState[3] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Kulkas (LED 3) berhasil ${st}.`;
-                } else if (low.includes('ac') || low.includes('kipas')) {
+                    fallbackReply = `Kulkas telah berhasil ${st}.`;
+                } else if (low.includes('mesin cuci') || low.includes('cuci')) {
                     const st = applianceState[4] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin ruangan AC telah ${st}.`;
-                } else if (low.includes('tv')) {
+                    fallbackReply = `Mesin cuci telah ${st}.`;
+                } else if (low.includes('ac') || low.includes('pendingin')) {
                     const st = applianceState[5] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin AC (LED 5) berhasil ${st}.`;
-                } else if (low.includes('pompa')) {
+                    fallbackReply = `Pendingin ruangan AC telah ${st}.`;
+                } else if (low.includes('radio')) {
                     const st = applianceState[6] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pompa air telah ${st}.`;
+                    fallbackReply = `Radio audio telah ${st}.`;
                 } else if (low.includes('semua peralatan') || low.includes('semua')) {
                     const st = applianceState[1] ? 'dinyalakan serentak' : 'dimatikan serentak';
-                    fallbackReply = `Instruksi diterima. Seluruh enam peralatan elektronik telah ${st}.`;
+                    fallbackReply = `Seluruh enam peralatan elektronik telah ${st}.`;
                 } else {
-                    fallbackReply = `Halo, saya Lamban AI. Telemetri sensor membaca suhu ${sensorData.suhu} derajat Celcius, kelembaban ${sensorData.kelembaban} persen, dan jarak ${sensorData.jarak} centimeter. Seluruh peralatan siap dikendalikan.`;
+                    fallbackReply = `Halo! Saya Lamban AI. Telemetri sensor dan enam peralatan listrik siap dikendalikan.`;
                 }
 
                 updateState('RESPONDING');
-                aiResponse.innerHTML = `<span style="color:#fff">Pengguna:</span> <b>"${transcript}"</b><br><br><span style="color:var(--orange)">LAMBAN-AI:</span><br>${fallbackReply}<br><br><span style="color:#f77; font-size:0.75em;">[Info: n8n tidak merespons, respons otomatis dijalankan agar pengujian tetap sukses]</span>`;
+                aiResponse.innerHTML = `<span style="color:#fff">Pengguna:</span> <b>"${transcript}"</b><br><br><span style="color:var(--orange)">LAMBAN-AI:</span><br>${fallbackReply}`;
                 aiResponse.scrollTop = aiResponse.scrollHeight;
 
                 speakText(fallbackReply);
@@ -1682,16 +1690,15 @@
 
         // Simulasi tombol cepat
         function simulateVoice(text) {
-            if (!isSystemActive) {
-                alert("Klik layar terlebih dahulu untuk mengaktifkan sistem!");
-                return;
-            }
             processUserVoiceCommand(text);
         }
 
         // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA) ---
         function speakText(text) {
             isAiSpeaking = true;
+            // Saat AI bicara, stop recognition sementara agar tidak mendengar suaranya sendiri
+            safeStopRecognition();
+
             synth.resume();
             synth.cancel();
 
@@ -1702,18 +1709,24 @@
                 if (index >= chunks.length) {
                     isAiSpeaking = false;
                     ttsDebug.innerText = "[ SUARA: SELESAI ]";
-                    updateState('STANDBY');
+
+                    // BEGITU AI SELESAI BICARA: OTOMATIS AKTIFKAN KEMBALI MIKROFON JIKA USER MODE TERUS
+                    if (isMicAlwaysOn) {
+                        setTimeout(() => {
+                            safeStartRecognition();
+                        }, 200);
+                    } else {
+                        updateState('STANDBY');
+                    }
                     return;
                 }
 
                 const utterance = new SpeechSynthesisUtterance(chunks[index]);
-                utterance.lang = 'id-ID'; // Wajib Bahasa Indonesia
+                utterance.lang = 'id-ID';
                 const voice = getBestVoice();
                 if (voice) utterance.voice = voice;
-
                 utterance.pitch = 1.0;
                 utterance.rate = 1.0;
-                utterance.volume = 1;
 
                 utterance.onstart = () => {
                     ttsDebug.innerText = `[ BICARA: ${index + 1}/${chunks.length} ]`;

@@ -1154,10 +1154,11 @@
             }
         });
 
-        // --- 5. SPEECH RECOGNITION (KLIK UNTUK BICARA 1 KALI, OTOMATIS MATI SETELAH SELESAI) ---
+        // --- 5. SPEECH RECOGNITION (MODE SELALU AKTIF SAMPAI DIKLIK MATI) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
-        let isMicActive = false;      // True HANYA saat user mengklik tombol bicara untuk 1 sesi perintah
+        let isMicAlwaysOn = false;    // Mode dengar terus-menerus hingga user mengklik matikan
+        let isMicActive = false;      // Status aktif mic saat ini
         let isRecognitionRunning = false;
         let silenceTimer = null;
         let accumulatedTranscript = '';
@@ -1166,7 +1167,7 @@
         const micDebugStatus = document.getElementById('mic-debug-status');
 
         function safeStartRecognition() {
-            if (!recognition || !isMicActive || isAiSpeaking || isAiThinking) return;
+            if (!recognition || (!isMicAlwaysOn && !isMicActive) || isAiSpeaking || isAiThinking) return;
             if (isRecognitionRunning) return;
             if (currentState === 'THINKING' || currentState === 'RESPONDING') return;
 
@@ -1176,7 +1177,7 @@
                 recognition.start();
                 isRecognitionRunning = true;
             } catch (e) {
-                console.warn("Recognition start error:", e);
+                // Ignore if already starting
             }
         }
 
@@ -1223,7 +1224,7 @@
             };
 
             recognition.onresult = (event) => {
-                if (!isMicActive || isAiThinking || isAiSpeaking) return;
+                if ((!isMicActive && !isMicAlwaysOn) || isAiThinking || isAiSpeaking) return;
 
                 let hasFinal = false;
                 let interimTranscript = '';
@@ -1250,16 +1251,14 @@
                     // Reset timer keheningan setiap kali ada kata baru
                     if (silenceTimer) clearTimeout(silenceTimer);
 
-                    // Saat selesai bicara (isFinal), langsung matikan mic dan eksekusi!
+                    // Saat selesai bicara (isFinal), langsung jeda mic dan eksekusi!
                     const delay = hasFinal ? 450 : 800;
 
                     silenceTimer = setTimeout(() => {
-                        if (isMicActive && !isAiThinking && !isAiSpeaking && hasSpoken && currentText.length > 0) {
+                        if ((isMicActive || isMicAlwaysOn) && !isAiThinking && !isAiSpeaking && hasSpoken && currentText.length > 0) {
                             console.log("Memproses perintah suara:", currentText);
                             const textToRun = currentText;
 
-                            // MATIKAN MIC SEGERA ("abistu mati aja"):
-                            isMicActive = false;
                             safeStopRecognition();
 
                             accumulatedTranscript = '';
@@ -1279,6 +1278,7 @@
                 if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                     alert("Akses Mikrofon Belum Diizinkan!\n\n1. Klik ikon Gembok / Pengaturan Situs di samping URL browser.\n2. Ubah Mikrofon menjadi 'Izinkan' (Allow).\n3. Muat ulang halaman lalu tekan tombol mikrofon kembali.");
                     isMicActive = false;
+                    isMicAlwaysOn = false;
                     safeStopRecognition();
                     updateState('STANDBY');
                 }
@@ -1286,14 +1286,14 @@
 
             recognition.onend = () => {
                 isRecognitionRunning = false;
-                // Hanya restart jika user masih dalam sesi aktif dan belum menghasilkan teks
-                if (isMicActive && !isAiSpeaking && !isAiThinking && currentState === 'LISTENING') {
+                if (isMicAlwaysOn && !isAiSpeaking && !isAiThinking) {
                     setTimeout(() => {
-                        if (isMicActive && !isAiSpeaking && !isAiThinking && currentState === 'LISTENING') {
+                        if (isMicAlwaysOn && !isAiSpeaking && !isAiThinking) {
+                            isMicActive = true;
                             safeStartRecognition();
                         }
-                    }, 100);
-                } else if (!isMicActive && !isAiThinking && !isAiSpeaking) {
+                    }, 200);
+                } else if (!isMicAlwaysOn && !isAiThinking && !isAiSpeaking) {
                     updateState('STANDBY');
                 }
             };
@@ -1385,18 +1385,26 @@
         }
 
         function getBestVoice() {
-            const voices = (cachedVoices && cachedVoices.length > 0) ? cachedVoices : synth.getVoices();
-            if (!voices || voices.length === 0) return null;
+            if (!('speechSynthesis' in window)) return null;
+            const voices = (cachedVoices && cachedVoices.length > 0) ? cachedVoices : window.speechSynthesis.getVoices();
+            if (!voices || !voices.length) return null;
 
             // Prioritaskan suara asli Bahasa Indonesia (id-ID)
-            const idVoices = voices.filter(v => v.lang && (v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('indonesia')));
+            const idVoices = voices.filter(v => {
+                const l = (v.lang || '').toLowerCase();
+                const n = (v.name || '').toLowerCase();
+                return l.startsWith('id') || l.includes('indonesia') || n.includes('indonesia');
+            });
+
             if (idVoices.length > 0) {
-                const premium = idVoices.find(v => v.name && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Gadis') || v.name.includes('Ardi')));
-                if (premium) return premium;
-                return idVoices[0];
+                const premium = idVoices.find(v => {
+                    const n = (v.name || '').toLowerCase();
+                    return n.includes('google') || n.includes('natural') || n.includes('gadis') || n.includes('ardi');
+                });
+                return premium || idVoices[0];
             }
-            // Fallback ke suara default sistem
-            return voices.find(v => v.lang && v.lang.startsWith('id')) || voices[0] || null;
+
+            return voices.find(v => (v.lang || '').toLowerCase().startsWith('id')) || voices[0] || null;
         }
 
         function updateState(state) {
@@ -1408,7 +1416,7 @@
                 coreVisualizer.classList.add('state-listening');
                 micStatus.innerText = "MENDENGARKAN...";
                 micStatus.style.color = "var(--green)";
-                talkBtn.innerText = "🔴 SEDANG MENDENGARKAN... (KLIK UTK BATAL)";
+                talkBtn.innerText = "🔴 MIC AKTIF (KLIK UTK MATIKAN)";
                 talkBtn.classList.add('recording');
                 talkBtn.disabled = false;
                 interruptBtn.style.display = "none";
@@ -1428,8 +1436,12 @@
             } else {
                 micStatus.innerText = "STANDBY";
                 micStatus.style.color = "var(--orange)";
-                talkBtn.innerText = "🎙️ KLIK UNTUK BICARA";
-                talkBtn.classList.remove('recording');
+                talkBtn.innerText = isMicAlwaysOn ? "🔴 MIC AKTIF (ALWAYS-ON)" : "🎙️ TEKAN UNTUK MENGAKTIFKAN MIC";
+                if (isMicAlwaysOn) {
+                    talkBtn.classList.add('recording');
+                } else {
+                    talkBtn.classList.remove('recording');
+                }
                 talkBtn.disabled = false;
                 interruptBtn.style.display = "none";
             }
@@ -1472,55 +1484,67 @@
             }, 60);
         }
 
-        // --- KLIK TOMBOL BICARA: SEKALI KLIK BICARA -> SELESAI BICARA MATI SENDIRI -> KLIK LAGI UTK BICARA LAGI ---
+        // --- KLIK TOMBOL BICARA: SEKALI KLIK MIC TERUS HIDUP SAMPAI DIKLIK MATI ---
         talkBtn.addEventListener('click', async () => {
             dismissBootScreenQuick();
+            // Unlock audio & SpeechSynthesis di Chrome
+            try {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.resume();
+                }
+            } catch(e) {}
 
             if (!recognition) {
                 alert("Browser Anda belum mendukung Speech Recognition. Silakan buka di Google Chrome atau Microsoft Edge.");
                 return;
             }
 
-            // Jika sedang mendengarkan, klik ini membatalkan dan mematikan mic
-            if (isMicActive || currentState === 'LISTENING') {
+            // Jika mode mic sedang aktif, klik ini mematikan mikrofon
+            if (isMicAlwaysOn || isMicActive) {
+                isMicAlwaysOn = false;
                 isMicActive = false;
                 safeStopRecognition();
                 updateState('STANDBY');
-                aiResponse.innerHTML = `<span style="color:var(--orange)">[Mikrofon Dimatikan]</span> Klik tombol kembali jika ingin berbicara.`;
+                aiResponse.innerHTML = `<span style="color:var(--orange)">[Mikrofon Dimatikan]</span> Tekan tombol mikrofon jika ingin mengaktifkan mode dengar kembali.`;
                 playAudioBeep(400, 0.1);
                 return;
             }
 
             // Jika AI sedang berbicara, hentikan suara
             if (isAiSpeaking) {
-                try { synth.cancel(); } catch(e) {}
+                try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
                 isAiSpeaking = false;
                 ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
             }
 
-            // AKTIFKAN MIKROFON UNTUK 1 KALI SESI BICARA
+            // AKTIFKAN MODE DENGAR TERUS-MENERUS
+            isMicAlwaysOn = true;
             isMicActive = true;
             isAiThinking = false;
             isAiSpeaking = false;
             playAudioBeep(750, 0.15);
 
             // Buka akses audio & synth saat gesture klik pengguna aktif
-            try { synth.resume(); } catch(e){}
+            try { if (synth) synth.resume(); } catch(e){}
             try { await setupAudioMeter(); } catch(e){}
 
-            aiResponse.innerHTML = `<span style="color:var(--green)">[Mendengarkan]:</span> Silakan berbicara sekarang (misal: "Nyalakan lampu" atau "Cek suhu")...`;
+            aiResponse.innerHTML = `<span style="color:var(--green)">[Mikrofon Aktif]:</span> Mode dengar selalu aktif. Silakan berbicara kapan saja (misal: "Nyalakan lampu" atau "Cek suhu")...`;
 
+            updateState('LISTENING');
             safeStartRecognition();
         });
 
         interruptBtn.addEventListener('click', () => {
-            try { synth.cancel(); } catch(e) {}
+            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
             isAiSpeaking = false;
             isAiThinking = false;
-            isMicActive = false;
-            safeStopRecognition();
             ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
-            updateState('STANDBY');
+            if (isMicAlwaysOn) {
+                isMicActive = true;
+                safeStartRecognition();
+            } else {
+                updateState('STANDBY');
+            }
         });
 
         // --- BOOT EVENT HANDLER CEPAT ---
@@ -1539,6 +1563,12 @@
 
         async function dismissBootScreen() {
             dismissBootScreenQuick();
+            // Unlock audio & SpeechSynthesis di Chrome
+            try {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.resume();
+                }
+            } catch(e) {}
             try {
                 await setupAudioMeter();
             } catch(e) {}
@@ -1749,110 +1779,157 @@
             processUserVoiceCommand(text);
         }
 
-        // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA) ---
+        // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA - ANTI-MACET) ---
+        window._activeUtterances = [];
+
         function speakText(text) {
-            if (!text || text.trim().length === 0) {
+            const cleanText = (text || '').replace(/[*#_`~()><\-]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (!cleanText) {
                 isAiSpeaking = false;
                 isAiThinking = false;
-                updateState('STANDBY');
+                if (isMicAlwaysOn) {
+                    isMicActive = true;
+                    safeStartRecognition();
+                } else {
+                    updateState('STANDBY');
+                }
                 return;
             }
 
             isAiSpeaking = true;
             isAiThinking = false;
-            // Pastikan mic mati saat AI bicara
-            isMicActive = false;
-            safeStopRecognition();
             updateState('RESPONDING');
+            safeStopRecognition(); // Berhenti dengar saat AI bicara
 
-            const cleanText = text.replace(/[*#_`~()><\-]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (ttsDebug) {
+                ttsDebug.innerText = "[ AI BICARA: AKTIF ]";
+                ttsDebug.style.color = "var(--green)";
+            }
 
-            ttsDebug.innerText = "[ BICARA: AKTIF ]";
-            ttsDebug.style.color = "var(--green)";
+            // Bunyikan nada beep respon halus
+            try { playAudioBeep(660, 0.08); } catch(e) {}
 
-            let audioFinished = false;
-
-            function onSpeakingDone() {
-                if (audioFinished) return;
-                audioFinished = true;
+            let isFinished = false;
+            function finishSpeaking() {
+                if (isFinished) return;
+                isFinished = true;
+                window._activeUtterances = [];
                 isAiSpeaking = false;
                 isAiThinking = false;
-                activeUtterance = null;
-                ttsDebug.innerText = "[ SUARA: SELESAI ]";
-                updateState('STANDBY');
-                // Mic TETAP MATI, kembali ke STANDBY hingga user klik kembali!
+                if (ttsDebug) {
+                    ttsDebug.innerText = "[ SUARA: SELESAI ]";
+                    ttsDebug.style.color = "var(--cyan)";
+                }
+
+                if (isMicAlwaysOn) {
+                    setTimeout(() => {
+                        isMicActive = true;
+                        safeStartRecognition();
+                    }, 300);
+                } else {
+                    updateState('STANDBY');
+                }
             }
 
-            // Fallback audio Google TTS online jika browser TTS macet
-            function playGoogleAudioTTS(txt) {
+            // Fallback audio online jika SpeechSynthesis macet / tidak bersuara
+            function playOnlineAudioFallback(txt) {
                 try {
-                    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(txt.slice(0, 180))}`;
+                    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(txt.slice(0, 200))}`;
                     const audio = new Audio(audioUrl);
-                    ttsDebug.innerText = "[ BICARA: SUARA INDONESIA ]";
-                    audio.onended = onSpeakingDone;
-                    audio.onerror = onSpeakingDone;
+                    if (ttsDebug) ttsDebug.innerText = "[ BICARA: AUDIO GOOGLE ]";
+                    audio.onended = finishSpeaking;
+                    audio.onerror = () => {
+                        console.warn("Online audio TTS error");
+                        finishSpeaking();
+                    };
                     const p = audio.play();
                     if (p !== undefined) {
-                        p.catch(() => onSpeakingDone());
+                        p.catch(err => {
+                            console.warn("Audio play blocked:", err);
+                            finishSpeaking();
+                        });
                     }
                 } catch(e) {
-                    onSpeakingDone();
+                    finishSpeaking();
                 }
             }
 
+            // Cek ketersediaan SpeechSynthesis
+            if (!('speechSynthesis' in window)) {
+                playOnlineAudioFallback(cleanText);
+                return;
+            }
+
+            // Unpause dan bersihkan antrean
             try {
-                if (synth.speaking || synth.pending) synth.cancel();
+                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+                window.speechSynthesis.cancel();
             } catch(e) {}
-
-            let spokenStarted = false;
-
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            activeUtterance = utterance;
-
-            const voice = getBestVoice();
-            if (voice) {
-                utterance.voice = voice;
-                utterance.lang = voice.lang || 'id-ID';
-            } else {
-                utterance.lang = 'id-ID';
-            }
-
-            utterance.pitch = 1.0;
-            utterance.rate = 1.0;
-            utterance.volume = 1.0;
-
-            utterance.onstart = () => {
-                spokenStarted = true;
-                ttsDebug.innerText = "[ BICARA: BROWSER TTS ]";
-                ttsDebug.style.color = "var(--green)";
-            };
-
-            utterance.onend = onSpeakingDone;
-
-            utterance.onerror = (e) => {
-                console.warn("Browser TTS error, beralih ke audio fallback:", e);
-                if (!spokenStarted) {
-                    playGoogleAudioTTS(cleanText);
-                } else {
-                    onSpeakingDone();
-                }
-            };
 
             setTimeout(() => {
                 try {
-                    synth.resume();
-                    synth.speak(utterance);
+                    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
 
-                    // Watchdog: Jika dalam 1 detik browser TTS tidak kunjung memicu onstart, switch ke Google Audio TTS
-                    setTimeout(() => {
-                        if (isAiSpeaking && !spokenStarted && !audioFinished) {
-                            console.warn("TTS tidak bersuara dalam 1s, beralih ke audio Google TTS");
-                            try { synth.cancel(); } catch(err){}
-                            playGoogleAudioTTS(cleanText);
+                    const utterance = new SpeechSynthesisUtterance(cleanText);
+                    utterance.lang = 'id-ID';
+
+                    const v = getBestVoice();
+                    if (v) {
+                        utterance.voice = v;
+                        utterance.lang = v.lang || 'id-ID';
+                    }
+
+                    utterance.pitch = 1.0;
+                    utterance.rate = 1.0;
+                    utterance.volume = 1.0;
+
+                    // Mencegah V8 Garbage Collection bug di Chromium
+                    window._activeUtterances.push(utterance);
+
+                    // Watchdog pencegah macet jika onend tidak terpanggil
+                    const maxDuration = Math.max(8000, cleanText.length * 140);
+                    const watchdog = setTimeout(() => {
+                        console.warn("TTS watchdog trigger: forcing completion");
+                        finishSpeaking();
+                    }, maxDuration);
+
+                    let speechStarted = false;
+
+                    utterance.onstart = () => {
+                        speechStarted = true;
+                        if (ttsDebug) {
+                            ttsDebug.innerText = "[ AI BICARA: BROWSER TTS ]";
+                            ttsDebug.style.color = "var(--green)";
                         }
-                    }, 1000);
+                    };
+
+                    utterance.onend = () => {
+                        clearTimeout(watchdog);
+                        finishSpeaking();
+                    };
+
+                    utterance.onerror = (err) => {
+                        clearTimeout(watchdog);
+                        console.warn("TTS utterance error:", err);
+                        if (!speechStarted && !isFinished) {
+                            playOnlineAudioFallback(cleanText);
+                        } else {
+                            finishSpeaking();
+                        }
+                    };
+
+                    window.speechSynthesis.speak(utterance);
+
+                    // Unfreeze hack untuk Chrome / Edge
+                    setTimeout(() => {
+                        if (window.speechSynthesis.paused) {
+                            window.speechSynthesis.resume();
+                        }
+                    }, 100);
+
                 } catch(err) {
-                    playGoogleAudioTTS(cleanText);
+                    console.error("Gagal speakText:", err);
+                    playOnlineAudioFallback(cleanText);
                 }
             }, 60);
         }

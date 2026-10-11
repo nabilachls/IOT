@@ -1,0 +1,12 @@
+node_modules/
+.vercel/
+*.bak
+*.log
+*.jpeg
+*.jpg
+*.png
+check_ids.py
+sensor_data.json
+server.js
+TUTORIAL_UTS_IOT.md
+vercel-api/

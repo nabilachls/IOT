@@ -1,0 +1,201 @@
+{
+  "name": "UTS IoT - Lamban AI Voice Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jarvis-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "webhookId": "jarvis-chat"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "Kamu adalah Lamban AI, Asisten AI yang dibuat Nabilah, kamu ramah dalam menjawab pertanyaan apapun.\n\nKamu memiliki 2 alat (tools):\n1. 'HTTP Request Sensor': untuk membaca nilai sensor suhu (°C), kelembaban (%), dan jarak objek (cm) dari ESP32.\n2. 'HTTP Request LED': untuk menyalakan atau mematikan 6 peralatan listrik (lampu, tv, kulkas, mesin_cuci, ac, radio).\n\nSaat pengguna menanyakan sensor, panggil tool sensor lalu sampaikan nilainya dengan ramah dalam Bahasa Indonesia alami.\nSaat pengguna meminta menyalakan atau mematikan alat, panggil tool LED lalu konfirmasikan aksi tersebut dengan jelas dan singkat (1-2 kalimat) tanpa simbol markdown agar mudah dibacakan oleh Text to Speech."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        500,
+        300
+      ],
+      "id": "ai-agent-core",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        380,
+        520
+      ],
+      "id": "gemini-flash-model",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GEMINI_API_KEY",
+          "name": "Google Gemini account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "chat_history",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        500,
+        520
+      ],
+      "id": "simple-memory",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/sensor",
+        "description": "Gunakan tool ini untuk membaca data sensor realtime: suhu ruangan (°C), kelembaban udara (%), dan jarak objek (cm) yang dikirim ESP32.",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        620,
+        520
+      ],
+      "id": "tool-sensor",
+      "name": "HTTP Request Sensor"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/led",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"alat\": $fromAI(\"alat\", \"Nama peralatan yang dikendalikan (lampu, tv, kulkas, mesin_cuci, ac, radio)\"), \"status\": $fromAI(\"status\", \"Status yang diinginkan: ON atau OFF\") } }}",
+        "description": "Gunakan tool ini untuk menyalakan atau mematikan 6 peralatan listrik (Lampu, TV, Kulkas, Mesin Cuci, AC, Radio).",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        740,
+        520
+      ],
+      "id": "tool-led",
+      "name": "HTTP Request LED"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"reply\": $json.output } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        300
+      ],
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Sensor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request LED": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

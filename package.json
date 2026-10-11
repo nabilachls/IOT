@@ -1,0 +1,11 @@
+{
+  "name": "iot-uts-vercel-api",
+  "version": "1.0.0",
+  "description": "API Serverless Vercel untuk UTS IoT - Sensor & Kontrol 6 LED",
+  "main": "api/sensor.js",
+  "type": "module",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {}
+}

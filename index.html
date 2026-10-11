@@ -1531,7 +1531,11 @@
             }
 
             // Jika AI sedang berbicara, hentikan suara
-            if (isAiSpeaking) {
+            if (isAiSpeaking || currentAudioPlayer) {
+                if (currentAudioPlayer) {
+                    try { currentAudioPlayer.pause(); } catch(e){}
+                    currentAudioPlayer = null;
+                }
                 try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
                 isAiSpeaking = false;
                 ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
@@ -1555,6 +1559,10 @@
         });
 
         interruptBtn.addEventListener('click', () => {
+            if (currentAudioPlayer) {
+                try { currentAudioPlayer.pause(); } catch(e){}
+                currentAudioPlayer = null;
+            }
             try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
             isAiSpeaking = false;
             isAiThinking = false;
@@ -1799,8 +1807,8 @@
             processUserVoiceCommand(text);
         }
 
-        // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA - ANTI-MACET) ---
-        window._activeUtterances = [];
+        // --- PEMBACA SUARA ALAMI BAHASA INDONESIA (STREAMING AUDIO TTS) ---
+        let currentAudioPlayer = null;
 
         function speakText(text) {
             const cleanText = (text || '').replace(/[*#_`~()><\-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1833,7 +1841,10 @@
             function finishSpeaking() {
                 if (isFinished) return;
                 isFinished = true;
-                window._activeUtterances = [];
+                if (currentAudioPlayer) {
+                    try { currentAudioPlayer.pause(); } catch(e){}
+                    currentAudioPlayer = null;
+                }
                 isAiSpeaking = false;
                 isAiThinking = false;
                 if (ttsDebug) {
@@ -1845,42 +1856,64 @@
                     setTimeout(() => {
                         isMicActive = true;
                         safeStartRecognition();
-                    }, 300);
+                    }, 350);
                 } else {
                     updateState('STANDBY');
                 }
             }
 
-            // Fallback audio online jika SpeechSynthesis macet / tidak bersuara
-            function playOnlineAudioFallback(txt) {
-                try {
-                    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(txt.slice(0, 200))}`;
-                    const audio = new Audio(audioUrl);
-                    if (ttsDebug) ttsDebug.innerText = "[ BICARA: AUDIO GOOGLE ]";
-                    audio.onended = finishSpeaking;
-                    audio.onerror = () => {
-                        console.warn("Online audio TTS error");
-                        finishSpeaking();
-                    };
-                    const p = audio.play();
-                    if (p !== undefined) {
-                        p.catch(err => {
-                            console.warn("Audio play blocked:", err);
-                            finishSpeaking();
-                        });
-                    }
-                } catch(e) {
-                    finishSpeaking();
-                }
+            // Hentikan pemutaran audio sebelumnya jika ada
+            if (currentAudioPlayer) {
+                try { currentAudioPlayer.pause(); } catch(e){}
+                currentAudioPlayer = null;
             }
 
-            // Cek ketersediaan SpeechSynthesis
+            // 1. Prioritaskan Server TTS Endpoint (Suara Asli Bahasa Indonesia Alami)
+            const ttsEndpoint = `/api/tts?text=${encodeURIComponent(cleanText.slice(0, 240))}`;
+            const audio = new Audio(ttsEndpoint);
+            currentAudioPlayer = audio;
+
+            // Watchdog durasi maksimal
+            const maxDuration = Math.max(9000, cleanText.length * 160);
+            const watchdog = setTimeout(() => {
+                console.warn("TTS watchdog trigger: forcing finish");
+                finishSpeaking();
+            }, maxDuration);
+
+            audio.onplay = () => {
+                if (ttsDebug) {
+                    ttsDebug.innerText = "[ AI BICARA: SUARA INDONESIA ]";
+                    ttsDebug.style.color = "var(--green)";
+                }
+            };
+
+            audio.onended = () => {
+                clearTimeout(watchdog);
+                finishSpeaking();
+            };
+
+            audio.onerror = (err) => {
+                clearTimeout(watchdog);
+                console.warn("Audio TTS stream error, beralih ke speechSynthesis:", err);
+                fallbackBrowserTTS(cleanText, finishSpeaking);
+            };
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    clearTimeout(watchdog);
+                    console.warn("Autoplay audio blocked atau error, beralih ke speechSynthesis:", err);
+                    fallbackBrowserTTS(cleanText, finishSpeaking);
+                });
+            }
+        }
+
+        // Fallback jika audio stream gagal
+        function fallbackBrowserTTS(cleanText, onDone) {
             if (!('speechSynthesis' in window)) {
-                playOnlineAudioFallback(cleanText);
+                onDone();
                 return;
             }
-
-            // Unpause dan bersihkan antrean
             try {
                 if (window.speechSynthesis.paused) window.speechSynthesis.resume();
                 window.speechSynthesis.cancel();
@@ -1888,68 +1921,23 @@
 
             setTimeout(() => {
                 try {
-                    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-
-                    const utterance = new SpeechSynthesisUtterance(cleanText);
-                    utterance.lang = 'id-ID';
-
+                    const u = new SpeechSynthesisUtterance(cleanText);
+                    u.lang = 'id-ID';
                     const v = getBestVoice();
-                    if (v) {
-                        utterance.voice = v;
-                        utterance.lang = v.lang || 'id-ID';
-                    }
+                    if (v) u.voice = v;
+                    u.pitch = 1.0;
+                    u.rate = 1.0;
+                    window._activeUtterances = [u];
 
-                    utterance.pitch = 1.0;
-                    utterance.rate = 1.0;
-                    utterance.volume = 1.0;
+                    u.onend = () => onDone();
+                    u.onerror = () => onDone();
 
-                    // Mencegah V8 Garbage Collection bug di Chromium
-                    window._activeUtterances.push(utterance);
-
-                    // Watchdog pencegah macet jika onend tidak terpanggil
-                    const maxDuration = Math.max(8000, cleanText.length * 140);
-                    const watchdog = setTimeout(() => {
-                        console.warn("TTS watchdog trigger: forcing completion");
-                        finishSpeaking();
-                    }, maxDuration);
-
-                    let speechStarted = false;
-
-                    utterance.onstart = () => {
-                        speechStarted = true;
-                        if (ttsDebug) {
-                            ttsDebug.innerText = "[ AI BICARA: BROWSER TTS ]";
-                            ttsDebug.style.color = "var(--green)";
-                        }
-                    };
-
-                    utterance.onend = () => {
-                        clearTimeout(watchdog);
-                        finishSpeaking();
-                    };
-
-                    utterance.onerror = (err) => {
-                        clearTimeout(watchdog);
-                        console.warn("TTS utterance error:", err);
-                        if (!speechStarted && !isFinished) {
-                            playOnlineAudioFallback(cleanText);
-                        } else {
-                            finishSpeaking();
-                        }
-                    };
-
-                    window.speechSynthesis.speak(utterance);
-
-                    // Unfreeze hack untuk Chrome / Edge
+                    window.speechSynthesis.speak(u);
                     setTimeout(() => {
-                        if (window.speechSynthesis.paused) {
-                            window.speechSynthesis.resume();
-                        }
-                    }, 100);
-
-                } catch(err) {
-                    console.error("Gagal speakText:", err);
-                    playOnlineAudioFallback(cleanText);
+                        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+                    }, 80);
+                } catch(e) {
+                    onDone();
                 }
             }, 60);
         }

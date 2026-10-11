@@ -695,12 +695,12 @@
                     <div class="sensor-icon">🌡️</div>
                     <div>
                         <div class="sensor-label">TEMPERATURE</div>
-                        <div class="sensor-name">Suhu Ruangan</div>
+                        <div class="sensor-name">Suhu Ruangan (DHT22)</div>
                     </div>
                 </div>
                 <div class="sensor-value-box">
-                    <span class="sensor-value" id="val-suhu">28.5</span><span class="sensor-unit">°C</span>
-                    <div class="sensor-sub">Status: Normal</div>
+                    <span class="sensor-value" id="val-suhu">--</span><span class="sensor-unit">°C</span>
+                    <div class="sensor-sub">Sensor DHT22</div>
                 </div>
             </div>
 
@@ -710,12 +710,12 @@
                     <div class="sensor-icon">💧</div>
                     <div>
                         <div class="sensor-label">HUMIDITY</div>
-                        <div class="sensor-name">Kelembaban</div>
+                        <div class="sensor-name">Kelembaban (DHT22)</div>
                     </div>
                 </div>
                 <div class="sensor-value-box">
-                    <span class="sensor-value" id="val-kelembaban">65.2</span><span class="sensor-unit">%</span>
-                    <div class="sensor-sub">Udara Stabil</div>
+                    <span class="sensor-value" id="val-kelembaban">--</span><span class="sensor-unit">%</span>
+                    <div class="sensor-sub">Sensor DHT22</div>
                 </div>
             </div>
 
@@ -729,44 +729,21 @@
                     </div>
                 </div>
                 <div class="sensor-value-box">
-                    <span class="sensor-value" id="val-jarak">18.4</span><span class="sensor-unit">cm</span>
+                    <span class="sensor-value" id="val-jarak">--</span><span class="sensor-unit">cm</span>
                     <div class="sensor-sub">Sensor HC-SR04</div>
                 </div>
             </div>
 
-            <!-- Energy Live Data UNILA -->
-            <div class="energy-box">
-                <div class="energy-box-title">
-                    <span>LIVE ENERGY UNILA CLUSTER</span>
-                    <span id="energy-time" style="color:var(--orange)">LIVE</span>
+            <!-- Hardware & Cloud Status ESP32 Realtime -->
+            <div style="margin-top:14px; padding:12px; border:1px solid var(--hud-border); border-radius:4px; background:var(--card-bg);">
+                <div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:8px; color:var(--orange); font-weight:bold;">
+                    <span>ESP32 HARDWARE LINK</span>
+                    <span id="esp32-status" style="color:var(--green)">CONNECTED</span>
                 </div>
-                <div class="energy-grid">
-                    <div class="energy-item">
-                        <div class="lbl">POWER R</div>
-                        <div class="val" id="val-power-r">5.40 kW</div>
-                    </div>
-                    <div class="energy-item">
-                        <div class="lbl">POWER S</div>
-                        <div class="val" id="val-power-s">4.93 kW</div>
-                    </div>
-                    <div class="energy-item">
-                        <div class="lbl">POWER T</div>
-                        <div class="val" id="val-power-t">0.70 kW</div>
-                    </div>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.75em; color:#aaa;">
-                    <span>ENERGY: <b id="val-energy" style="color:var(--cyan)">52765.6</b> kWh</span>
-                    <span>CARBON: <b id="val-carbon" style="color:var(--gold)">40418.5</b> kg</span>
-                </div>
-            </div>
-
-            <div style="margin-top:14px; font-size:0.75em; opacity:0.7;">
-                <div>DIAGNOSTIK SISTEM:</div>
-                <div style="display:flex; justify-content:space-between; margin-top:4px;">
-                    <span>MIC STATUS:</span> <span id="mic-status" style="color:var(--orange)">READY</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top:2px;">
-                    <span>CORE LOAD:</span> <span id="cpu-load" style="color:var(--green)">14.2%</span>
+                <div style="font-size:0.75em; color:#aaa; line-height:1.6;">
+                    <div>• SENSOR: <span style="color:#fff;">DHT22 (D4) + HC-SR04 (D5/D18)</span></div>
+                    <div>• API VERCEL: <span style="color:var(--cyan);">/api/sensor & /api/led</span></div>
+                    <div>• STATUS: <span id="sensor-status-sub" style="color:var(--gold);">Menunggu data ESP32...</span></div>
                 </div>
             </div>
         </div>
@@ -959,10 +936,12 @@
         };
 
         const sensorData = {
-            suhu: 28.5,
-            kelembaban: 65.2,
-            jarak: 18.4
+            suhu: null,
+            kelembaban: null,
+            jarak: null
         };
+
+        const applianceKeys = ['', 'lampu', 'tv', 'kulkas', 'mesin_cuci', 'ac', 'radio'];
 
         // DOM elements
         const bootScreen = document.getElementById('boot-screen');
@@ -995,80 +974,125 @@
         const sessionDisp = document.getElementById('session-display');
         if (sessionDisp) sessionDisp.innerText = getSessionId().slice(0, 12);
 
-        // --- 2. SENSOR SIMULATION & LIVE UNILA FETCH ---
-        function updateSensorUI() {
-            document.getElementById('val-suhu').innerText = sensorData.suhu.toFixed(1);
-            document.getElementById('val-kelembaban').innerText = sensorData.kelembaban.toFixed(1);
-            document.getElementById('val-jarak').innerText = sensorData.jarak.toFixed(1);
-        }
-
-        // Live telemetry fluctuation
-        setInterval(() => {
-            if (isSystemActive) {
-                sensorData.suhu = +(28.0 + Math.random() * 1.4).toFixed(1);
-                sensorData.kelembaban = +(63.0 + Math.random() * 4.0).toFixed(1);
-                sensorData.jarak = +(14.0 + Math.random() * 8.0).toFixed(1);
-                updateSensorUI();
-                
-                const cpuEl = document.getElementById('cpu-load');
-                if (cpuEl) cpuEl.innerText = (Math.random() * 6 + 12).toFixed(1) + '%';
-            }
-        }, 3000);
-
-        // Fetch Unila live energy API
-        async function fetchUnilaEnergy() {
+        // --- 2. SENSOR REALTIME FETCH DARI /api/sensor (MURNI HARDWARE ESP32) ---
+        async function fetchRealSensorData() {
             try {
-                const res = await fetch('https://nodes.unila.ac.id/API/IOT/api_energy_live.php');
+                const res = await fetch('/api/sensor');
                 if (res.ok) {
                     const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        const row = data[0];
-                        document.getElementById('val-power-r').innerText = Number(row.active_power_r).toFixed(2) + ' kW';
-                        document.getElementById('val-power-s').innerText = Number(row.active_power_s).toFixed(2) + ' kW';
-                        document.getElementById('val-power-t').innerText = Number(row.active_power_t).toFixed(2) + ' kW';
-                        document.getElementById('val-energy').innerText = Number(row.energy).toFixed(1);
-                        document.getElementById('val-carbon').innerText = Number(row.carbon).toFixed(1);
-                        document.getElementById('energy-time').innerText = row.time_stamp.split(' ')[1] || 'LIVE';
+                    if (data.sensor && data.sensor.suhu !== null && data.sensor.suhu !== undefined) {
+                        sensorData.suhu = Number(data.sensor.suhu);
+                        sensorData.kelembaban = Number(data.sensor.kelembaban);
+                        sensorData.jarak = Number(data.sensor.jarak);
+
+                        document.getElementById('val-suhu').innerText = sensorData.suhu.toFixed(1);
+                        document.getElementById('val-kelembaban').innerText = sensorData.kelembaban.toFixed(1);
+                        document.getElementById('val-jarak').innerText = sensorData.jarak.toFixed(1);
+
+                        const statusSub = document.getElementById('sensor-status-sub');
+                        if (statusSub) {
+                            statusSub.innerText = 'Data Realtime ESP32 Terhubung';
+                            statusSub.style.color = 'var(--green)';
+                        }
+                    } else {
+                        document.getElementById('val-suhu').innerText = '--';
+                        document.getElementById('val-kelembaban').innerText = '--';
+                        document.getElementById('val-jarak').innerText = '--';
+
+                        const statusSub = document.getElementById('sensor-status-sub');
+                        if (statusSub) {
+                            statusSub.innerText = 'Menunggu data dari ESP32...';
+                            statusSub.style.color = 'var(--gold)';
+                        }
                     }
                 }
             } catch (e) {
-                // Keep default values if network blocks CORS
+                console.warn("Gagal fetch /api/sensor:", e);
             }
         }
-        setInterval(fetchUnilaEnergy, 5000);
-        fetchUnilaEnergy();
 
-        // --- 3. APPLIANCE CONTROLLER LOGIC ---
+        // --- FETCH REALTIME STATUS 6 LED DARI /api/led ---
+        async function fetchRealLedData() {
+            try {
+                const res = await fetch('/api/led');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.peralatan) {
+                        for (let id = 1; id <= 6; id++) {
+                            const key = applianceKeys[id];
+                            if (data.peralatan[key] !== undefined) {
+                                applianceState[id] = (data.peralatan[key] === 'ON' || data.peralatan[key] === '1');
+                            }
+                        }
+                        updateApplianceUI();
+                    }
+                }
+            } catch (e) {
+                console.warn("Gagal fetch /api/led:", e);
+            }
+        }
+
+        // Polling berkala setiap 2.5 detik untuk data realtime ESP32
+        setInterval(fetchRealSensorData, 2500);
+        setInterval(fetchRealLedData, 2500);
+        fetchRealSensorData();
+        fetchRealLedData();
+
+        // --- 3. APPLIANCE CONTROLLER LOGIC (TERHUBUNG KE /api/led) ---
         function updateApplianceUI() {
             let count = 0;
             for (let id = 1; id <= 6; id++) {
                 const card = document.getElementById(`card-${id}`);
                 const stateTxt = document.getElementById(`state-${id}`);
                 if (applianceState[id]) {
-                    card.classList.add('active');
-                    stateTxt.innerText = 'ON';
+                    if (card) card.classList.add('active');
+                    if (stateTxt) stateTxt.innerText = 'ON';
                     count++;
                 } else {
-                    card.classList.remove('active');
-                    stateTxt.innerText = 'OFF';
+                    if (card) card.classList.remove('active');
+                    if (stateTxt) stateTxt.innerText = 'OFF';
                 }
             }
-            activeCount.innerText = `${count}/6 AKTIF`;
+            if (activeCount) activeCount.innerText = `${count}/6 AKTIF`;
         }
 
-        function toggleAppliance(id) {
+        async function toggleAppliance(id) {
+            const key = applianceKeys[id];
             applianceState[id] = !applianceState[id];
             updateApplianceUI();
             playAudioBeep(applianceState[id] ? 880 : 440);
+
+            try {
+                await fetch('/api/led', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        alat: key,
+                        status: applianceState[id] ? 'ON' : 'OFF'
+                    })
+                });
+            } catch (err) {
+                console.warn("Gagal update LED ke server:", err);
+            }
         }
 
-        function setAllAppliances(state) {
+        async function setAllAppliances(state) {
             const isTargetOn = (state === 'ON');
             for (let id = 1; id <= 6; id++) {
                 applianceState[id] = isTargetOn;
             }
             updateApplianceUI();
             playAudioBeep(isTargetOn ? 900 : 300);
+
+            try {
+                await fetch('/api/led', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ all: state })
+                });
+            } catch (err) {
+                console.warn("Gagal bulk update LED ke server:", err);
+            }
         }
 
         // --- 4. 3D SOLAR PARTICLES INITIALIZATION ---

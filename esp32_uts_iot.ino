@@ -179,9 +179,8 @@ void loop() {
     float jarak = readUltrasonicDistance();
 
     if (isnan(suhu) || isnan(kelembaban)) {
-      Serial.println("Gagal membaca DHT11!");
-      suhu = 28.5; // fallback
-      kelembaban = 65.0;
+      Serial.println("[PERINGATAN] Sensor DHT22 belum terbaca, periksa kabel pin D4 & 3V3!");
+      return; // Tidak mengirim data dummy jika sensor fisik belum siap
     }
 
     Serial.printf("[SENSOR] Suhu: %.1f C | Kelembaban: %.1f %% | Jarak: %.1f cm\n", suhu, kelembaban, jarak);

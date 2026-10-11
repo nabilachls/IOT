@@ -1,12 +1,12 @@
-// Global in-memory storage untuk data sensor terkini
+// Penyimpanan data sensor realtime murni dari ESP32 (Tanpa data dummy)
 let sensorData = {
-    suhu: 28.5,
-    kelembaban: 65.2,
-    jarak: 18.4,
+    suhu: null,
+    kelembaban: null,
+    jarak: null,
     satuan_suhu: "°C",
     satuan_kelembaban: "%",
     satuan_jarak: "cm",
-    timestamp: new Date().toISOString()
+    timestamp: null
 };
 
 export default function handler(req, res) {
@@ -26,6 +26,22 @@ export default function handler(req, res) {
 
     // GET: Membaca nilai sensor terkini (dipanggil oleh Tool n8n AI Agent atau Web)
     if (req.method === 'GET') {
+        if (sensorData.suhu === null) {
+            return res.status(200).json({
+                status: "waiting",
+                timestamp: null,
+                sensor: {
+                    suhu: null,
+                    kelembaban: null,
+                    jarak: null,
+                    satuan_suhu: "°C",
+                    satuan_kelembaban: "%",
+                    satuan_jarak: "cm",
+                    ringkasan: "Menunggu pengiriman data sensor perdana dari ESP32 (DHT22 & HC-SR04)."
+                }
+            });
+        }
+
         return res.status(200).json({
             status: "success",
             timestamp: sensorData.timestamp,
@@ -36,22 +52,22 @@ export default function handler(req, res) {
                 satuan_suhu: sensorData.satuan_suhu,
                 satuan_kelembaban: sensorData.satuan_kelembaban,
                 satuan_jarak: sensorData.satuan_jarak,
-                ringkasan: `Suhu saat ini ${sensorData.suhu} derajat Celcius, kelembaban ${sensorData.kelembaban} persen, dan jarak objek sejauh ${sensorData.jarak} centimeter.`
+                ringkasan: `Suhu ruangan ${sensorData.suhu} derajat Celcius, kelembaban udara ${sensorData.kelembaban} persen, dan jarak halangan ${sensorData.jarak} sentimeter.`
             }
         });
     }
 
-    // POST: Memperbarui nilai sensor (dipanggil oleh ESP32 DHT11 + HC-SR04)
+    // POST: Memperbarui nilai sensor murni (dikirim oleh ESP32 DHT22 + HC-SR04)
     if (req.method === 'POST') {
         const body = req.body || {};
-        if (body.suhu !== undefined) sensorData.suhu = Number(body.suhu);
-        if (body.kelembaban !== undefined) sensorData.kelembaban = Number(body.kelembaban);
-        if (body.jarak !== undefined) sensorData.jarak = Number(body.jarak);
+        if (body.suhu !== undefined && body.suhu !== null) sensorData.suhu = Number(body.suhu);
+        if (body.kelembaban !== undefined && body.kelembaban !== null) sensorData.kelembaban = Number(body.kelembaban);
+        if (body.jarak !== undefined && body.jarak !== null) sensorData.jarak = Number(body.jarak);
         sensorData.timestamp = new Date().toISOString();
 
         return res.status(200).json({
             status: "success",
-            message: "Data sensor berhasil diperbarui dari ESP32",
+            message: "Data sensor asli berhasil diterima dari ESP32",
             data: sensorData
         });
     }

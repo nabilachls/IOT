@@ -3,28 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lamban Home - Smart IoT & Voice Assistant</title>
+    <title>Lamban Home • IoT & Voice AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-pink: #FF6584;
-            --primary-hover: #FF4D6D;
-            --soft-pink: #FFF0F5;
-            --blush-100: #FFE4EC;
-            --blush-200: #FFC2D1;
-            --blush-300: #FFA5BA;
-            --rose-accent: #E11D48;
-            --rose-glow: rgba(255, 101, 132, 0.35);
-            --bg-gradient: linear-gradient(135deg, #FFF5F7 0%, #FFE9F0 50%, #FFF0F5 100%);
-            --card-bg: rgba(255, 255, 255, 0.85);
-            --card-border: rgba(255, 182, 193, 0.5);
-            --text-dark: #2D1520;
-            --text-muted: #8E6070;
-            --shadow-soft: 0 10px 30px rgba(225, 29, 72, 0.07);
-            --shadow-card: 0 14px 35px rgba(255, 101, 132, 0.12);
-            --success-green: #10B981;
+            /* Palette: Clean Modern Minimalist Pink */
+            --pink-primary: #FF4D79;
+            --pink-hover: #E83663;
+            --pink-light: #FFEFF4;
+            --pink-card-bg: #FFF8FA;
+            --pink-border: #FFD4E2;
+            --pink-border-strong: #FFB3CB;
+            --pink-glow: rgba(255, 77, 121, 0.25);
+            --bg-page: #FFF0F4;
+            
+            --text-title: #2B0E1B;
+            --text-body: #4A2033;
+            --text-muted: #8E5A70;
+            --text-light: #B48599;
+
+            --white: #FFFFFF;
+            --success: #10B981;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --shadow-subtle: 0 4px 20px rgba(232, 54, 99, 0.05);
+            --shadow-card: 0 10px 30px rgba(255, 77, 121, 0.08);
+            --shadow-active: 0 12px 32px rgba(255, 77, 121, 0.22);
         }
 
         * {
@@ -35,655 +42,546 @@
         }
 
         body {
-            background: var(--bg-gradient);
-            color: var(--text-dark);
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-page);
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(255, 179, 203, 0.35) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, rgba(255, 128, 168, 0.25) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(255, 240, 245, 0.8) 0px, transparent 80%);
+            color: var(--text-body);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
-            overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            position: relative;
-        }
-
-        /* Background Soft Aesthetic Circles */
-        .bg-blobs {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-        .blob-1 {
-            position: absolute;
-            top: -100px;
-            right: -100px;
-            width: 450px;
-            height: 450px;
-            background: radial-gradient(circle, rgba(255, 182, 193, 0.45) 0%, rgba(255, 240, 245, 0) 70%);
-            border-radius: 50%;
-            filter: blur(40px);
-        }
-        .blob-2 {
-            position: absolute;
-            bottom: -80px;
-            left: -80px;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(255, 194, 209, 0.35) 0%, rgba(255, 240, 245, 0) 70%);
-            border-radius: 50%;
-            filter: blur(50px);
+            line-height: 1.5;
         }
 
         /* --- Header Navigation --- */
         header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--card-border);
-            padding: 14px 28px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--pink-border);
+            padding: 16px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            box-shadow: 0 4px 20px rgba(255, 105, 180, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
 
-        .brand-container {
+        .header-brand {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--primary-pink), var(--primary-hover));
+        .brand-dot {
+            width: 38px;
+            height: 38px;
+            background: var(--pink-primary);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 6px 16px var(--rose-glow);
+            color: #fff;
+            font-size: 19px;
+            box-shadow: 0 6px 16px var(--pink-glow);
         }
-        .brand-text h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            letter-spacing: -0.5px;
+        .brand-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-title);
+            letter-spacing: -0.3px;
         }
-        .brand-text p {
-            font-size: 0.78rem;
+        .brand-subtitle {
+            font-size: 0.75rem;
             color: var(--text-muted);
             font-weight: 500;
         }
 
-        .header-badges {
+        .header-meta {
             display: flex;
             align-items: center;
             gap: 12px;
-            flex-wrap: wrap;
         }
-        .user-tag {
-            background: #fff;
+        .status-pill {
+            background: var(--pink-light);
+            border: 1px solid var(--pink-border);
             padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            border-radius: 30px;
+            font-size: 0.78rem;
             font-weight: 600;
-            color: var(--rose-accent);
-            border: 1px solid var(--blush-200);
+            color: var(--pink-primary);
             display: flex;
             align-items: center;
             gap: 6px;
-            box-shadow: var(--shadow-soft);
         }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--success-green);
+        .status-led {
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+        }
+        .config-toggle-btn {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            color: var(--text-body);
+            padding: 7px 14px;
+            border-radius: 30px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .config-toggle-btn:hover {
+            border-color: var(--pink-primary);
+            color: var(--pink-primary);
         }
 
-        /* --- Config Bar (Accordion / Dropdown) --- */
-        .config-bar {
-            max-width: 1400px;
-            margin: 12px auto 0;
+        /* --- Collapsible Webhook Settings --- */
+        #settings-drawer {
+            max-width: 1200px;
+            margin: 14px auto 0;
             padding: 0 24px;
             width: 100%;
-            z-index: 10;
+            display: none;
         }
-        .config-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 10px 18px;
+        .settings-card {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            border-radius: var(--radius-md);
+            padding: 14px 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
-            box-shadow: var(--shadow-soft);
+            box-shadow: var(--shadow-subtle);
         }
-        .config-input-group {
-            display: flex;
-            align-items: center;
-            background: #fff;
-            border: 1px solid var(--blush-200);
-            border-radius: 10px;
-            padding: 4px 8px;
+        .settings-input {
             flex: 1;
             min-width: 280px;
-        }
-        .config-input-group label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--rose-accent);
-            padding: 4px 8px;
-            background: var(--soft-pink);
-            border-radius: 6px;
-            margin-right: 8px;
-            white-space: nowrap;
-        }
-        .config-input-group input {
-            border: none;
-            outline: none;
-            font-family: inherit;
+            padding: 8px 14px;
+            border: 1px solid var(--pink-border);
+            border-radius: 10px;
             font-size: 0.85rem;
-            color: var(--text-dark);
-            width: 100%;
+            color: var(--text-title);
+            background: var(--pink-card-bg);
+            outline: none;
         }
-        .btn-pink-small {
-            background: var(--soft-pink);
-            color: var(--rose-accent);
-            border: 1px solid var(--blush-200);
-            padding: 7px 14px;
+        .settings-input:focus {
+            border-color: var(--pink-primary);
+            background: #fff;
+        }
+        .btn-pink-outline {
+            background: #fff;
+            border: 1px solid var(--pink-border);
+            color: var(--pink-primary);
+            padding: 8px 14px;
             border-radius: 10px;
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-pink-small:hover {
-            background: var(--primary-pink);
+        .btn-pink-outline:hover {
+            background: var(--pink-primary);
             color: #fff;
-            border-color: var(--primary-pink);
+            border-color: var(--pink-primary);
         }
 
-        /* --- Main Layout Grid --- */
-        main {
-            max-width: 1400px;
-            margin: 20px auto 60px;
+        /* --- Main Layout Container --- */
+        .main-container {
+            max-width: 1200px;
+            margin: 24px auto 60px;
             padding: 0 24px;
             width: 100%;
-            display: grid;
-            grid-template-columns: 340px 1fr 380px;
-            gap: 24px;
-            z-index: 10;
-        }
-
-        @media (max-width: 1180px) {
-            main {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* --- Cards & Panels --- */
-        .glass-panel {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: var(--shadow-card);
             display: flex;
             flex-direction: column;
-            gap: 18px;
-            position: relative;
+            gap: 28px;
         }
 
-        .panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .panel-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-dark);
-        }
-        .panel-title span {
-            font-size: 1.3rem;
-        }
-        .panel-badge {
-            background: var(--blush-100);
-            color: var(--rose-accent);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 12px;
-        }
-
-        /* --- Left Column: Telemetri Sensor --- */
-        .sensor-list {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .sensor-card {
-            background: #fff;
-            border: 1px solid var(--blush-100);
-            border-radius: 18px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: transform 0.25s, box-shadow 0.25s;
-            box-shadow: var(--shadow-soft);
-        }
-        .sensor-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(255, 101, 132, 0.12);
-        }
-        .sensor-info {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .sensor-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: var(--soft-pink);
-            border: 1px solid var(--blush-200);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        .sensor-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-        }
-        .sensor-value {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-dark);
-        }
-        .sensor-unit {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--primary-pink);
-            margin-left: 2px;
-        }
-        .sensor-pill {
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: var(--soft-pink);
-            color: var(--rose-accent);
-        }
-
-        /* Sync status card */
-        .sync-box {
-            background: linear-gradient(135deg, #FFF0F5, #FFE4EC);
-            border: 1px dashed var(--blush-300);
-            border-radius: 16px;
-            padding: 14px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .sync-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .sync-time {
-            font-weight: 700;
-            color: var(--rose-accent);
-        }
-
-        /* --- Center Column: Voice Assistant & Chat --- */
-        .center-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Voice Assistant Circle Hub */
-        .voice-hub {
-            background: #fff;
-            border: 1px solid var(--blush-100);
-            border-radius: 24px;
-            padding: 32px 24px 28px;
+        /* --- Section 1: Hero Voice Assistant --- */
+        .voice-hero {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            border-radius: var(--radius-lg);
+            padding: 36px 28px 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            position: relative;
             box-shadow: var(--shadow-card);
+            position: relative;
             overflow: hidden;
         }
 
-        .avatar-ring-wrapper {
+        /* Ambient pink gradient top-bar inside card */
+        .voice-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #FFB3CB, var(--pink-primary), #FF85A1);
+        }
+
+        .voice-orb-wrapper {
             position: relative;
-            width: 140px;
-            height: 140px;
+            width: 110px;
+            height: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
         }
-
-        .pulse-wave {
+        .orb-wave {
             position: absolute;
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: rgba(255, 101, 132, 0.15);
-            animation: pulse-ring 2.8s infinite ease-out;
+            background: rgba(255, 77, 121, 0.12);
+            animation: orb-pulse 3s infinite ease-out;
             pointer-events: none;
         }
-        .pulse-wave-2 {
+        .orb-wave-2 {
             position: absolute;
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: rgba(255, 101, 132, 0.25);
-            animation: pulse-ring 2.8s infinite ease-out 1.4s;
+            background: rgba(255, 77, 121, 0.18);
+            animation: orb-pulse 3s infinite ease-out 1.5s;
             pointer-events: none;
         }
-
-        @keyframes pulse-ring {
-            0% { transform: scale(0.85); opacity: 0.8; }
-            100% { transform: scale(1.6); opacity: 0; }
+        @keyframes orb-pulse {
+            0% { transform: scale(0.85); opacity: 0.9; }
+            100% { transform: scale(1.55); opacity: 0; }
         }
 
-        .avatar-circle {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #FF758F 0%, #FF4D6D 100%);
+        .mic-circle-btn {
+            width: 82px;
+            height: 82px;
             border-radius: 50%;
+            background: linear-gradient(135deg, #FF658A 0%, var(--pink-primary) 100%);
+            border: 4px solid var(--white);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 42px;
-            color: #fff;
-            box-shadow: 0 12px 30px var(--rose-glow);
-            z-index: 2;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 32px;
             cursor: pointer;
+            box-shadow: 0 10px 28px var(--pink-glow);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
         }
-        .avatar-circle:hover {
-            transform: scale(1.05);
-            box-shadow: 0 16px 36px rgba(255, 77, 109, 0.45);
+        .mic-circle-btn:hover {
+            transform: scale(1.06);
+            box-shadow: 0 14px 36px rgba(255, 77, 121, 0.4);
+        }
+        .mic-circle-btn.listening {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            box-shadow: 0 10px 28px rgba(16, 185, 129, 0.4);
+            animation: mic-listening 1.6s infinite ease-in-out;
+        }
+        @keyframes mic-listening {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
-        .hub-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text-dark);
+        .hero-greeting {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--text-title);
             margin-bottom: 4px;
+            letter-spacing: -0.4px;
         }
-        .hub-subtitle {
-            font-size: 0.85rem;
+        .hero-desc {
+            font-size: 0.88rem;
             color: var(--text-muted);
-            max-width: 380px;
-            margin-bottom: 22px;
+            max-width: 440px;
+            margin-bottom: 18px;
         }
 
-        /* Voice Status Banner */
-        .voice-state-badge {
+        .voice-state-tag {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: var(--soft-pink);
-            border: 1px solid var(--blush-200);
-            padding: 8px 18px;
+            background: var(--pink-light);
+            border: 1px solid var(--pink-border);
+            padding: 6px 16px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            color: var(--rose-accent);
+            color: var(--pink-primary);
             margin-bottom: 18px;
-            transition: all 0.3s;
         }
-        .voice-state-badge.listening {
-            background: #FFE4EC;
-            border-color: var(--primary-pink);
-            box-shadow: 0 0 20px rgba(255, 101, 132, 0.35);
-        }
-
-        /* Tombol Utama Mic */
-        .action-btn-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
+        .voice-state-tag.listening {
+            background: #FFE0E9;
+            border-color: var(--pink-primary);
+            box-shadow: 0 0 16px rgba(255, 77, 121, 0.3);
         }
 
-        .mic-main-btn {
-            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-hover) 100%);
-            color: #fff;
-            border: none;
-            padding: 14px 34px;
-            border-radius: 30px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 10px 25px var(--rose-glow);
-            transition: all 0.25s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .mic-main-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 32px rgba(255, 77, 109, 0.4);
-        }
-        .mic-main-btn.listening {
-            background: linear-gradient(135deg, #10B981, #059669);
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-            animation: pulse-green 1.5s infinite;
-        }
-        @keyframes pulse-green {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04); }
-        }
-
-        .stop-speak-btn {
-            background: #fff;
-            color: var(--rose-accent);
-            border: 1px solid var(--blush-300);
-            padding: 14px 20px;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: none;
-            transition: all 0.2s;
-        }
-        .stop-speak-btn:hover {
-            background: var(--soft-pink);
-        }
-
-        /* Quick Command Chips */
-        .chips-container {
+        /* Chips Perintah Cepat */
+        .quick-chips-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             justify-content: center;
-            margin-top: 20px;
+            max-width: 650px;
         }
-        .quick-chip {
-            background: var(--soft-pink);
-            border: 1px solid var(--blush-200);
-            padding: 7px 14px;
-            border-radius: 16px;
+        .chip-btn {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            color: var(--text-body);
+            padding: 7px 15px;
+            border-radius: 20px;
             font-size: 0.78rem;
             font-weight: 600;
-            color: var(--text-dark);
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(255, 77, 121, 0.04);
         }
-        .quick-chip:hover {
-            background: var(--primary-pink);
-            color: #fff;
-            border-color: var(--primary-pink);
+        .chip-btn:hover {
+            border-color: var(--pink-primary);
+            color: var(--pink-primary);
+            background: var(--pink-light);
             transform: translateY(-1px);
         }
 
-        /* Chat / Response Bubble */
-        .chat-card {
-            background: #fff;
-            border: 1px solid var(--blush-100);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: var(--shadow-soft);
+        /* Chat / Interaction Box */
+        .chat-container {
+            width: 100%;
+            max-width: 650px;
+            margin-top: 20px;
+            background: var(--pink-card-bg);
+            border: 1px solid var(--pink-border);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            max-height: 260px;
+            gap: 10px;
+            max-height: 180px;
             overflow-y: auto;
+            text-align: left;
         }
-        .chat-bubble {
-            padding: 12px 16px;
-            border-radius: 16px;
-            font-size: 0.88rem;
+        .chat-row {
+            font-size: 0.85rem;
             line-height: 1.5;
         }
         .chat-user {
-            background: var(--blush-100);
-            color: var(--text-dark);
-            align-self: flex-end;
-            max-width: 85%;
-            border-bottom-right-radius: 4px;
-            font-weight: 600;
+            color: var(--text-title);
+            font-weight: 700;
         }
         .chat-ai {
-            background: #FAFAFA;
-            border: 1px solid var(--blush-200);
-            color: var(--text-dark);
-            align-self: flex-start;
-            max-width: 90%;
-            border-bottom-left-radius: 4px;
+            color: var(--pink-primary);
+            font-weight: 600;
         }
-        .chat-ai b {
-            color: var(--rose-accent);
+        .chat-ai span {
+            color: var(--text-body);
+            font-weight: 500;
         }
 
-        /* --- Right Column: 6 Peralatan Listrik (LED) --- */
-        .appliances-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .appliances-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-        }
-
-        .device-card {
-            background: #fff;
-            border: 1px solid var(--blush-100);
-            border-radius: 18px;
-            padding: 14px 16px;
+        /* --- Section 2: Sensor Telemetry Cards (3-Column Minimal) --- */
+        .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: var(--shadow-soft);
-            transition: all 0.25s;
+            margin-bottom: 14px;
         }
-        .device-card:hover {
-            border-color: var(--blush-300);
-            box-shadow: 0 8px 20px rgba(255, 101, 132, 0.1);
-        }
-        .device-card.active {
-            border-color: var(--primary-pink);
-            background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F7 100%);
-            box-shadow: 0 10px 25px rgba(255, 101, 132, 0.15);
-        }
-
-        .device-left {
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-title);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            letter-spacing: -0.2px;
         }
-        .device-icon {
-            width: 44px;
-            height: 44px;
+        .section-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--pink-primary);
+            background: var(--pink-light);
+            border: 1px solid var(--pink-border);
+            padding: 4px 10px;
             border-radius: 12px;
-            background: var(--soft-pink);
-            border: 1px solid var(--blush-200);
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 768px) {
+            .sensors-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sensor-card {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            border-radius: var(--radius-md);
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-subtle);
+            transition: all 0.25s;
+        }
+        .sensor-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--pink-border-strong);
+            box-shadow: var(--shadow-card);
+        }
+        .sensor-meta {
+            display: flex;
+            flex-direction: column;
+        }
+        .sensor-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .sensor-number {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--text-title);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+        }
+        .sensor-unit {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--pink-primary);
+        }
+        .sensor-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--pink-primary);
+            background: var(--pink-light);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            align-self: flex-start;
+        }
+
+        .sensor-icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: var(--pink-light);
+            border: 1px solid var(--pink-border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            transition: all 0.3s;
-        }
-        .device-card.active .device-icon {
-            background: linear-gradient(135deg, var(--primary-pink), var(--primary-hover));
-            color: #fff;
-            box-shadow: 0 6px 14px var(--rose-glow);
+            font-size: 24px;
         }
 
-        .device-details h4 {
-            font-size: 0.92rem;
+        /* --- Section 3: 6 Appliances Cards (Grid 3x2 or 2x3) --- */
+        .appliances-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 900px) {
+            .appliances-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .appliances-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .device-card {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            border-radius: var(--radius-md);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-subtle);
+            transition: all 0.25s;
+        }
+        .device-card:hover {
+            border-color: var(--pink-border-strong);
+            box-shadow: var(--shadow-card);
+        }
+        .device-card.active {
+            border-color: var(--pink-primary);
+            background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F8 100%);
+            box-shadow: var(--shadow-active);
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .device-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: var(--pink-light);
+            border: 1px solid var(--pink-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.25s;
+        }
+        .device-card.active .device-icon {
+            background: var(--pink-primary);
+            color: #fff;
+            box-shadow: 0 6px 16px var(--pink-glow);
+        }
+
+        .device-text h4 {
+            font-size: 0.95rem;
             font-weight: 700;
-            color: var(--text-dark);
+            color: var(--text-title);
             margin-bottom: 2px;
         }
-        .device-details p {
+        .device-text p {
             font-size: 0.72rem;
             font-weight: 600;
             color: var(--text-muted);
         }
 
-        /* Toggle switch pink */
-        .switch {
+        /* Clean Minimal Pink Toggle Switch */
+        .toggle-switch {
             position: relative;
             display: inline-block;
             width: 50px;
             height: 28px;
         }
-        .switch input {
+        .toggle-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-        .slider {
+        .toggle-slider {
             position: absolute;
             cursor: pointer;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #E2E8F0;
-            transition: 0.3s;
+            background-color: #EAD5DE;
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             border-radius: 28px;
         }
-        .slider:before {
+        .toggle-slider:before {
             position: absolute;
             content: "";
             height: 22px;
@@ -691,395 +589,359 @@
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: 0.3s;
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         }
-        input:checked + .slider {
-            background-color: var(--primary-pink);
-            box-shadow: 0 0 12px var(--rose-glow);
+        input:checked + .toggle-slider {
+            background-color: var(--pink-primary);
+            box-shadow: 0 0 14px var(--pink-glow);
         }
-        input:checked + .slider:before {
+        input:checked + .toggle-slider:before {
             transform: translateX(22px);
         }
 
-        /* Tombol Bulk Control */
-        .bulk-actions {
+        /* Bulk Controls Row */
+        .bulk-actions-row {
             display: flex;
-            gap: 10px;
-            margin-top: 4px;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 14px;
         }
-        .bulk-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 12px;
+        .bulk-pill-btn {
+            background: var(--white);
+            border: 1px solid var(--pink-border);
+            color: var(--text-title);
+            padding: 9px 18px;
+            border-radius: 30px;
             font-size: 0.8rem;
             font-weight: 700;
-            border: 1px solid var(--blush-200);
-            background: #fff;
-            color: var(--text-dark);
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: var(--shadow-subtle);
         }
-        .bulk-btn:hover {
-            background: var(--soft-pink);
-            color: var(--rose-accent);
-            border-color: var(--primary-pink);
+        .bulk-pill-btn:hover {
+            border-color: var(--pink-primary);
+            color: var(--pink-primary);
+            background: var(--pink-light);
         }
 
-        /* Footer */
+        /* --- Footer --- */
         footer {
             margin-top: auto;
             text-align: center;
-            padding: 20px;
-            font-size: 0.8rem;
+            padding: 24px;
+            font-size: 0.78rem;
             color: var(--text-muted);
-            border-top: 1px solid var(--card-border);
-            background: rgba(255, 255, 255, 0.5);
-            z-index: 10;
+            border-top: 1px solid var(--pink-border);
+            background: rgba(255, 255, 255, 0.6);
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-blobs">
-        <div class="blob-1"></div>
-        <div class="blob-2"></div>
-    </div>
-
-    <!-- Header -->
+    <!-- Header Navigation -->
     <header>
-        <div class="brand-container">
-            <div class="brand-icon">🌸</div>
-            <div class="brand-text">
-                <h1>Lamban Home</h1>
-                <p>Smart IoT & AI Voice Assistant</p>
+        <div class="header-brand">
+            <div class="brand-dot">🌸</div>
+            <div>
+                <div class="brand-title">Lamban Home</div>
+                <div class="brand-subtitle">Smart IoT & Voice Assistant • Nabilah</div>
             </div>
         </div>
 
-        <div class="header-badges">
-            <div class="user-tag">
-                <span class="status-dot"></span>
-                <span>Nabilah's Smart Living</span>
+        <div class="header-meta">
+            <div class="status-pill">
+                <span class="status-led"></span>
+                <span id="header-sync-status">Vercel & ESP32 Online</span>
             </div>
+            <button class="config-toggle-btn" onclick="toggleSettingsDrawer()">
+                ⚙️ <span>Webhook n8n</span>
+            </button>
         </div>
     </header>
 
-    <!-- Webhook & API Connection Settings -->
-    <div class="config-bar">
-        <div class="config-card">
-            <div class="config-input-group">
-                <label>n8n Webhook</label>
-                <input type="text" id="webhook-url" value="http://localhost:5678/webhook/jarvis-chat" placeholder="URL Webhook n8n...">
-            </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-pink-small" onclick="setWebhookPreset('test')">Preset Test</button>
-                <button class="btn-pink-small" onclick="setWebhookPreset('prod')">Preset Prod</button>
-                <button class="btn-pink-small" onclick="fetchLiveData()">🔄 Refresh API</button>
-            </div>
+    <!-- Collapsible Settings for Webhook n8n -->
+    <div id="settings-drawer">
+        <div class="settings-card">
+            <span style="font-size:0.8rem; font-weight:700; color:var(--pink-primary);">Webhook n8n URL:</span>
+            <input type="text" id="webhook-url" class="settings-input" value="http://localhost:5678/webhook/jarvis-chat" placeholder="Masukkan URL Webhook n8n...">
+            <button class="btn-pink-outline" onclick="setPresetWebhook('test')">Preset Test</button>
+            <button class="btn-pink-outline" onclick="setPresetWebhook('prod')">Preset Prod</button>
+            <button class="btn-pink-outline" onclick="fetchLiveTelemetry()">🔄 Sinkron API</button>
         </div>
     </div>
 
-    <!-- Main Dashboard Grid -->
-    <main>
-        <!-- Kolom Kiri: Sensor Realtime -->
-        <div class="glass-panel">
-            <div class="panel-header">
-                <div class="panel-title">
-                    <span>📊</span>
-                    <span>Sensor Lingkungan</span>
-                </div>
-                <span class="panel-badge">ESP32 Online</span>
+    <!-- Main Container -->
+    <div class="main-container">
+
+        <!-- 1. HERO VOICE ASSISTANT -->
+        <section class="voice-hero">
+            <div class="voice-orb-wrapper">
+                <div class="orb-wave"></div>
+                <div class="orb-wave-2"></div>
+                <button class="mic-circle-btn" id="mic-btn" onclick="toggleSpeech()" title="Tekan untuk bicara">
+                    🎙️
+                </button>
             </div>
 
-            <div class="sensor-list">
+            <h2 class="hero-greeting">Halo, Nabilah! ✨</h2>
+            <p class="hero-desc">Tekan tombol mikrofon di atas untuk memberi perintah suara atau pilih aksi cepat di bawah.</p>
+
+            <div class="voice-state-tag" id="voice-tag">
+                <span>●</span> <span id="voice-state-text">Siap Mendengarkan</span>
+            </div>
+
+            <!-- Quick Chips -->
+            <div class="quick-chips-grid">
+                <button class="chip-btn" onclick="sendQuickPrompt('Berapa suhu dan kelembaban sekarang?')">🌡️ Cek Suhu & Kelembaban</button>
+                <button class="chip-btn" onclick="sendQuickPrompt('Nyalakan Lampu dan TV')">💡 Nyalakan Lampu & TV</button>
+                <button class="chip-btn" onclick="sendQuickPrompt('Nyalakan AC')">❄️ Nyalakan AC</button>
+                <button class="chip-btn" onclick="sendQuickPrompt('Matikan semua peralatan')">🌙 Matikan Semua</button>
+            </div>
+
+            <!-- Chat Transcript Box -->
+            <div class="chat-container" id="chat-container">
+                <div class="chat-row">
+                    <span class="chat-ai">Lamban AI: </span>
+                    <span>Sistem rumah pintar Anda aktif. Seluruh peralatan dan sensor siap diperintah.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. SENSOR REALTIME (DHT22 & HC-SR04) -->
+        <section>
+            <div class="section-header">
+                <div class="section-title">
+                    <span>📊</span>
+                    <span>Telemetri Lingkungan</span>
+                </div>
+                <span class="section-badge">DHT22 & HC-SR04 Realtime</span>
+            </div>
+
+            <div class="sensors-grid">
                 <!-- Suhu -->
                 <div class="sensor-card">
-                    <div class="sensor-info">
-                        <div class="sensor-icon">🌡️</div>
-                        <div>
-                            <div class="sensor-label">Suhu Ruangan</div>
-                            <div class="sensor-value">
-                                <span id="val-suhu">28.5</span><span class="sensor-unit">°C</span>
-                            </div>
+                    <div class="sensor-meta">
+                        <span class="sensor-name">Suhu Ruangan</span>
+                        <div class="sensor-number">
+                            <span id="val-suhu">28.5</span>
+                            <span class="sensor-unit">°C</span>
                         </div>
+                        <span class="sensor-badge" id="badge-suhu">Optimal</span>
                     </div>
-                    <div class="sensor-pill" id="badge-suhu">Optimal</div>
+                    <div class="sensor-icon-box">🌡️</div>
                 </div>
 
                 <!-- Kelembaban -->
                 <div class="sensor-card">
-                    <div class="sensor-info">
-                        <div class="sensor-icon">💧</div>
-                        <div>
-                            <div class="sensor-label">Kelembaban Udara</div>
-                            <div class="sensor-value">
-                                <span id="val-kelembaban">65.2</span><span class="sensor-unit">%</span>
-                            </div>
+                    <div class="sensor-meta">
+                        <span class="sensor-name">Kelembaban Udara</span>
+                        <div class="sensor-number">
+                            <span id="val-kelembaban">65.2</span>
+                            <span class="sensor-unit">%</span>
                         </div>
+                        <span class="sensor-badge" id="badge-kelembaban">Normal</span>
                     </div>
-                    <div class="sensor-pill" id="badge-kelembaban">Normal</div>
+                    <div class="sensor-icon-box">💧</div>
                 </div>
 
-                <!-- Jarak -->
+                <!-- Jarak Ultrasonik -->
                 <div class="sensor-card">
-                    <div class="sensor-info">
-                        <div class="sensor-icon">📏</div>
-                        <div>
-                            <div class="sensor-label">Sensor Jarak</div>
-                            <div class="sensor-value">
-                                <span id="val-jarak">18.4</span><span class="sensor-unit">cm</span>
-                            </div>
+                    <div class="sensor-meta">
+                        <span class="sensor-name">Sensor Jarak</span>
+                        <div class="sensor-number">
+                            <span id="val-jarak">18.4</span>
+                            <span class="sensor-unit">cm</span>
                         </div>
+                        <span class="sensor-badge" id="badge-jarak">Aman</span>
                     </div>
-                    <div class="sensor-pill" id="badge-jarak">Aman</div>
+                    <div class="sensor-icon-box">📏</div>
                 </div>
             </div>
+        </section>
 
-            <!-- Sinkronisasi Info -->
-            <div class="sync-box">
-                <div class="sync-row">
-                    <span>Sumber Data:</span>
-                    <span style="font-weight:700; color:var(--text-dark);">DHT22 & HC-SR04</span>
-                </div>
-                <div class="sync-row">
-                    <span>Sinkron Vercel:</span>
-                    <span class="sync-time" id="sync-status">Aktif (Live)</span>
-                </div>
-                <div class="sync-row">
-                    <span>Terakhir Update:</span>
-                    <span id="last-update" style="font-weight:600;">Baru saja</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Kolom Tengah: Voice AI & Chat Interaktif -->
-        <div class="center-column">
-            <div class="voice-hub">
-                <div class="avatar-ring-wrapper">
-                    <div class="pulse-wave" id="pulse1"></div>
-                    <div class="pulse-wave-2" id="pulse2"></div>
-                    <div class="avatar-circle" id="avatar-btn" onclick="toggleVoiceListening()">
-                        🎙️
-                    </div>
-                </div>
-
-                <div class="hub-title">Hai, Nabilah! ✨</div>
-                <div class="hub-subtitle">Saya Lamban AI, asisten rumah pintar Anda. Tekan tombol di bawah atau bicara langsung.</div>
-
-                <div class="voice-state-badge" id="voice-state">
-                    <span>●</span> <span id="voice-state-text">Siap Mendengarkan</span>
-                </div>
-
-                <div class="action-btn-group">
-                    <button class="mic-main-btn" id="mic-btn" onclick="toggleVoiceListening()">
-                        <span>🎙️</span>
-                        <span id="mic-btn-label">Mulai Bicara</span>
-                    </button>
-                    <button class="stop-speak-btn" id="stop-speech-btn" onclick="stopAiSpeech()">
-                        ⏹️ Hentikan Suara
-                    </button>
-                </div>
-
-                <!-- Quick Command Chips -->
-                <div class="chips-container">
-                    <div class="quick-chip" onclick="handleQuickVoice('Berapa suhu dan kelembaban sekarang?')">🌡️ Cek Suhu</div>
-                    <div class="quick-chip" onclick="handleQuickVoice('Nyalakan Lampu dan TV')">💡 Nyalakan Lampu & TV</div>
-                    <div class="quick-chip" onclick="handleQuickVoice('Nyalakan AC')">❄️ Nyalakan AC</div>
-                    <div class="quick-chip" onclick="handleQuickVoice('Matikan semua peralatan')">🌙 Matikan Semua</div>
-                </div>
-            </div>
-
-            <!-- Kotak Percakapan -->
-            <div class="chat-card" id="chat-box">
-                <div class="chat-bubble chat-ai">
-                    <b>Lamban AI:</b> Halo! Sistem IoT Lamban Home siap. Anda dapat memberikan perintah suara seperti <i>"Berapa suhu sekarang?"</i> atau <i>"Nyalakan lampu"</i>.
-                </div>
-            </div>
-        </div>
-
-        <!-- Kolom Kanan: 6 Peralatan Listrik (LED Controller) -->
-        <div class="glass-panel appliances-panel">
-            <div class="panel-header">
-                <div class="panel-title">
+        <!-- 3. KENDALI 6 PERALATAN LISTRIK (LED ESP32) -->
+        <section>
+            <div class="section-header">
+                <div class="section-title">
                     <span>⚡</span>
-                    <span>Kendali Peralatan</span>
+                    <span>Kendali Peralatan Listrik</span>
                 </div>
-                <span class="panel-badge">6 Unit LED</span>
+                <span class="section-badge">6 Unit LED ESP32</span>
             </div>
 
             <div class="appliances-grid">
                 <!-- 1. Lampu -->
                 <div class="device-card" id="card-lampu">
-                    <div class="device-left">
+                    <div class="device-info">
                         <div class="device-icon">💡</div>
-                        <div class="device-details">
+                        <div class="device-text">
                             <h4>Lampu Utama</h4>
                             <p>ESP32 Pin D19 (LED 1)</p>
                         </div>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-lampu" onchange="toggleDevice('lampu', this.checked)">
-                        <span class="slider"></span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-lampu" onchange="updateDeviceState('lampu', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
 
                 <!-- 2. TV -->
                 <div class="device-card" id="card-tv">
-                    <div class="device-left">
+                    <div class="device-info">
                         <div class="device-icon">📺</div>
-                        <div class="device-details">
+                        <div class="device-text">
                             <h4>Smart TV</h4>
                             <p>ESP32 Pin D21 (LED 2)</p>
                         </div>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-tv" onchange="toggleDevice('tv', this.checked)">
-                        <span class="slider"></span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-tv" onchange="updateDeviceState('tv', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
 
                 <!-- 3. Kulkas -->
                 <div class="device-card" id="card-kulkas">
-                    <div class="device-left">
+                    <div class="device-info">
                         <div class="device-icon">🧊</div>
-                        <div class="device-details">
+                        <div class="device-text">
                             <h4>Kulkas</h4>
                             <p>ESP32 Pin D22 (LED 3)</p>
                         </div>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-kulkas" onchange="toggleDevice('kulkas', this.checked)">
-                        <span class="slider"></span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-kulkas" onchange="updateDeviceState('kulkas', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
 
                 <!-- 4. Mesin Cuci -->
                 <div class="device-card" id="card-mesin_cuci">
-                    <div class="device-left">
+                    <div class="device-info">
                         <div class="device-icon">🧺</div>
-                        <div class="device-details">
+                        <div class="device-text">
                             <h4>Mesin Cuci</h4>
                             <p>ESP32 Pin D23 (LED 4)</p>
                         </div>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-mesin_cuci" onchange="toggleDevice('mesin_cuci', this.checked)">
-                        <span class="slider"></span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-mesin_cuci" onchange="updateDeviceState('mesin_cuci', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
 
                 <!-- 5. AC -->
                 <div class="device-card" id="card-ac">
-                    <div class="device-left">
+                    <div class="device-info">
                         <div class="device-icon">❄️</div>
-                        <div class="device-details">
+                        <div class="device-text">
                             <h4>Pendingin AC</h4>
                             <p>ESP32 Pin D25 (LED 5)</p>
                         </div>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-ac" onchange="toggleDevice('ac', this.checked)">
-                        <span class="slider"></span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-ac" onchange="updateDeviceState('ac', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
 
                 <!-- 6. Radio -->
                 <div class="device-card" id="card-radio">
-                    <div class="device-left">
+                    <div class="device-info">
                         <div class="device-icon">📻</div>
-                        <div class="device-details">
+                        <div class="device-text">
                             <h4>Radio Audio</h4>
                             <p>ESP32 Pin D26 (LED 6)</p>
                         </div>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-radio" onchange="toggleDevice('radio', this.checked)">
-                        <span class="slider"></span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-radio" onchange="updateDeviceState('radio', this.checked)">
+                        <span class="toggle-slider"></span>
                     </label>
                 </div>
             </div>
 
-            <!-- Saklar Serentak -->
-            <div class="bulk-actions">
-                <button class="bulk-btn" onclick="bulkSetAllDevices('ON')">🌸 Nyalakan Semua</button>
-                <button class="bulk-btn" onclick="bulkSetAllDevices('OFF')">🌙 Matikan Semua</button>
+            <!-- Bulk Switch Buttons -->
+            <div class="bulk-actions-row">
+                <button class="bulk-pill-btn" onclick="bulkUpdateAll('ON')">🌸 Nyalakan Semua</button>
+                <button class="bulk-pill-btn" onclick="bulkUpdateAll('OFF')">🌙 Matikan Semua</button>
             </div>
-        </div>
-    </main>
+        </section>
 
+    </div>
+
+    <!-- Footer -->
     <footer>
-        🌸 UTS IoT Teknik Elektro Universitas Lampung • Dibuat oleh Nabilah Alya Chalisa
+        UTS IoT Smart Home • Dibuat oleh Nabilah Alya Chalisa • Universitas Lampung
     </footer>
 
-    <!-- LOGIC JAVASCRIPT -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // API Base URL (Otomatis mendeteksi jika di Vercel atau localhost)
-        const API_BASE = window.location.origin;
+        const API_URL = window.location.origin;
 
-        // State Sensor & Peralatan
-        let currentSensors = { suhu: 28.5, kelembaban: 65.2, jarak: 18.4 };
-        let currentDevices = { lampu: "OFF", tv: "OFF", kulkas: "OFF", mesin_cuci: "OFF", ac: "OFF", radio: "OFF" };
+        let sensors = { suhu: 28.5, kelembaban: 65.2, jarak: 18.4 };
+        let devices = { lampu: "OFF", tv: "OFF", kulkas: "OFF", mesin_cuci: "OFF", ac: "OFF", radio: "OFF" };
 
         let isListening = false;
         let isSpeaking = false;
         const synth = window.speechSynthesis;
         let recognition = null;
 
-        // Preset Webhook
-        function setWebhookPreset(type) {
+        // Toggle Settings Drawer
+        function toggleSettingsDrawer() {
+            const drawer = document.getElementById('settings-drawer');
+            drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function setPresetWebhook(type) {
             const input = document.getElementById('webhook-url');
-            if (type === 'test') {
-                input.value = 'http://localhost:5678/webhook-test/jarvis-chat';
-            } else {
-                input.value = 'http://localhost:5678/webhook/jarvis-chat';
-            }
+            input.value = type === 'test' 
+                ? 'http://localhost:5678/webhook-test/jarvis-chat' 
+                : 'http://localhost:5678/webhook/jarvis-chat';
         }
 
         // --- FETCH REALTIME DARI VERCEL API ---
-        async function fetchLiveData() {
+        async function fetchLiveTelemetry() {
             try {
-                // 1. Fetch Sensor
-                const resSensor = await fetch(`${API_BASE}/api/sensor`);
+                // 1. Baca Sensor
+                const resSensor = await fetch(`${API_URL}/api/sensor`);
                 if (resSensor.ok) {
                     const data = await resSensor.json();
                     if (data.sensor) {
-                        currentSensors = data.sensor;
-                        document.getElementById('val-suhu').innerText = Number(currentSensors.suhu).toFixed(1);
-                        document.getElementById('val-kelembaban').innerText = Number(currentSensors.kelembaban).toFixed(1);
-                        document.getElementById('val-jarak').innerText = Number(currentSensors.jarak).toFixed(1);
+                        sensors = data.sensor;
+                        document.getElementById('val-suhu').innerText = Number(sensors.suhu).toFixed(1);
+                        document.getElementById('val-kelembaban').innerText = Number(sensors.kelembaban).toFixed(1);
+                        document.getElementById('val-jarak').innerText = Number(sensors.jarak).toFixed(1);
 
-                        // Update badges
-                        document.getElementById('badge-suhu').innerText = currentSensors.suhu > 30 ? "Hangat" : "Optimal";
-                        document.getElementById('badge-kelembaban').innerText = currentSensors.kelembaban > 70 ? "Tinggi" : "Normal";
-                        document.getElementById('badge-jarak').innerText = currentSensors.jarak < 10 ? "Dekat" : "Aman";
+                        document.getElementById('badge-suhu').innerText = sensors.suhu > 30 ? "Hangat" : "Optimal";
+                        document.getElementById('badge-kelembaban').innerText = sensors.kelembaban > 70 ? "Tinggi" : "Normal";
+                        document.getElementById('badge-jarak').innerText = sensors.jarak < 10 ? "Dekat" : "Aman";
                     }
                 }
 
-                // 2. Fetch LED / Peralatan
-                const resLed = await fetch(`${API_BASE}/api/led`);
+                // 2. Baca LED Peralatan
+                const resLed = await fetch(`${API_URL}/api/led`);
                 if (resLed.ok) {
                     const data = await resLed.json();
                     if (data.peralatan) {
-                        currentDevices = data.peralatan;
-                        updateDevicesUI();
+                        devices = data.peralatan;
+                        syncDeviceUI();
                     }
                 }
-
-                const now = new Date();
-                document.getElementById('last-update').innerText = now.toLocaleTimeString('id-ID');
-            } catch (e) {
-                console.warn("Gagal update live data:", e);
+            } catch (err) {
+                console.warn("Sinkronisasi latar belakang:", err);
             }
         }
 
-        function updateDevicesUI() {
-            for (const [device, status] of Object.entries(currentDevices)) {
-                const checkbox = document.getElementById(`toggle-${device}`);
-                const card = document.getElementById(`card-${device}`);
-                const isOn = (status === 'ON' || status === '1' || status === true);
+        function syncDeviceUI() {
+            for (const [key, val] of Object.entries(devices)) {
+                const cb = document.getElementById(`toggle-${key}`);
+                const card = document.getElementById(`card-${key}`);
+                const isOn = (val === 'ON' || val === '1' || val === true);
 
-                if (checkbox) checkbox.checked = isOn;
+                if (cb) cb.checked = isOn;
                 if (card) {
                     if (isOn) card.classList.add('active');
                     else card.classList.remove('active');
@@ -1087,258 +949,219 @@
             }
         }
 
-        // Toggle Switch Satuan
-        async function toggleDevice(alat, state) {
-            const statusStr = state ? 'ON' : 'OFF';
-            currentDevices[alat] = statusStr;
-            updateDevicesUI();
+        // Switch Satuan
+        async function updateDeviceState(alat, checked) {
+            const status = checked ? 'ON' : 'OFF';
+            devices[alat] = status;
+            syncDeviceUI();
 
             try {
-                await fetch(`${API_BASE}/api/led`, {
+                await fetch(`${API_URL}/api/led`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ alat: alat, status: statusStr })
+                    body: JSON.stringify({ alat: alat, status: status })
                 });
-            } catch (err) {
-                console.warn("Gagal kirim status LED:", err);
+            } catch (e) {
+                console.warn(e);
             }
         }
 
-        // Bulk Nyalakan / Matikan Semua
-        async function bulkSetAllDevices(stateStr) {
-            for (const key of Object.keys(currentDevices)) {
-                currentDevices[key] = stateStr;
-            }
-            updateDevicesUI();
+        // Switch Serentak Semua
+        async function bulkUpdateAll(status) {
+            for (const k of Object.keys(devices)) devices[k] = status;
+            syncDeviceUI();
 
             try {
-                await fetch(`${API_BASE}/api/led`, {
+                await fetch(`${API_URL}/api/led`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ all: stateStr })
+                    body: JSON.stringify({ all: status })
                 });
-            } catch (err) {
-                console.warn("Gagal bulk update:", err);
+            } catch (e) {
+                console.warn(e);
             }
         }
 
-        // Polling berkala setiap 3 detik
-        setInterval(fetchLiveData, 3000);
-        fetchLiveData();
+        setInterval(fetchLiveTelemetry, 3000);
+        fetchLiveTelemetry();
 
         // --- WEB SPEECH RECOGNITION (STT) ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+            recognition = new SpeechRec();
             recognition.lang = 'id-ID';
             recognition.continuous = false;
             recognition.interimResults = false;
 
             recognition.onstart = () => {
                 isListening = true;
-                setVoiceState('listening', 'Mendengarkan suara Anda...');
+                setVoiceTag('listening', 'Mendengarkan suara Anda...');
                 document.getElementById('mic-btn').classList.add('listening');
-                document.getElementById('mic-btn-label').innerText = 'Sedang Mendengarkan...';
             };
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                processVoiceCommand(transcript);
+            recognition.onresult = (ev) => {
+                const text = ev.results[0][0].transcript;
+                handleVoicePrompt(text);
             };
 
-            recognition.onerror = (event) => {
-                console.warn("Speech error:", event.error);
-                stopVoiceListening();
-            };
-
-            recognition.onend = () => {
-                stopVoiceListening();
-            };
+            recognition.onerror = () => stopSpeech();
+            recognition.onend = () => stopSpeech();
         }
 
-        function toggleVoiceListening() {
-            if (isListening) {
-                stopVoiceListening();
-            } else {
-                startVoiceListening();
-            }
+        function toggleSpeech() {
+            if (isListening) stopSpeech();
+            else startSpeech();
         }
 
-        function startVoiceListening() {
+        function startSpeech() {
             if (synth.speaking) synth.cancel();
             if (recognition) {
-                try {
-                    recognition.start();
-                } catch(e) {
-                    console.warn(e);
-                }
+                try { recognition.start(); } catch(e){}
             } else {
-                alert("Browser Anda belum mendukung Speech Recognition. Silakan coba di Google Chrome.");
+                alert("Browser Anda belum mendukung Speech Recognition. Gunakan Google Chrome.");
             }
         }
 
-        function stopVoiceListening() {
+        function stopSpeech() {
             isListening = false;
             if (recognition) {
-                try { recognition.stop(); } catch(e) {}
+                try { recognition.stop(); } catch(e){}
             }
             document.getElementById('mic-btn').classList.remove('listening');
-            document.getElementById('mic-btn-label').innerText = 'Mulai Bicara';
-            if (!isSpeaking) {
-                setVoiceState('standby', 'Siap Mendengarkan');
-            }
+            if (!isSpeaking) setVoiceTag('standby', 'Siap Mendengarkan');
         }
 
-        function setVoiceState(state, text) {
-            const badge = document.getElementById('voice-state');
-            const textSpan = document.getElementById('voice-state-text');
-            textSpan.innerText = text;
-
-            if (state === 'listening') {
-                badge.className = 'voice-state-badge listening';
-            } else {
-                badge.className = 'voice-state-badge';
-            }
+        function setVoiceTag(state, label) {
+            const tag = document.getElementById('voice-tag');
+            document.getElementById('voice-state-text').innerText = label;
+            if (state === 'listening') tag.className = 'voice-state-tag listening';
+            else tag.className = 'voice-state-tag';
         }
 
-        // --- PROSES PERINTAH SUARA & KIRIM KE N8N ---
-        async function processVoiceCommand(text) {
-            appendChat('user', text);
-            setVoiceState('thinking', 'Sedang memproses perintah...');
+        // --- HANDLE VOICE PROMPT & SEND TO N8N ---
+        async function handleVoicePrompt(promptText) {
+            appendChatLog('user', promptText);
+            setVoiceTag('thinking', 'Sedang memproses...');
 
-            // Cek lokal intent untuk update UI cepat
-            detectLocalCommand(text);
+            // Deteksi cepat lokal
+            checkLocalIntent(promptText);
 
-            const webhookUrl = document.getElementById('webhook-url').value.trim() || 'http://localhost:5678/webhook/jarvis-chat';
+            const webhook = document.getElementById('webhook-url').value.trim() || 'http://localhost:5678/webhook/jarvis-chat';
 
             try {
-                const response = await fetch(webhookUrl, {
+                const res = await fetch(webhook, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: text,
-                        chatInput: text,
-                        telemetry: currentSensors
+                        message: promptText,
+                        chatInput: promptText,
+                        telemetry: sensors
                     })
                 });
 
-                if (!response.ok) throw new Error("n8n tidak merespons");
-                const data = await response.json();
-                const aiReply = data.reply || data.output || data.text || "Perintah berhasil dijalankan.";
+                if (!res.ok) throw new Error("n8n offline");
+                const resData = await res.json();
+                const reply = resData.reply || resData.output || resData.text || "Perintah berhasil diproses.";
 
-                appendChat('ai', aiReply);
-                speakResponse(aiReply);
+                appendChatLog('ai', reply);
+                speakVoice(reply);
+
             } catch (err) {
-                console.warn("n8n webhook offline, memicu respons pintar lokal:", err);
-                const localReply = generateSmartFallback(text);
-                appendChat('ai', localReply);
-                speakResponse(localReply);
+                const fallback = getSmartFallback(promptText);
+                appendChatLog('ai', fallback);
+                speakVoice(fallback);
             }
         }
 
-        function handleQuickVoice(prompt) {
-            processVoiceCommand(prompt);
+        function sendQuickPrompt(txt) {
+            handleVoicePrompt(txt);
         }
 
-        // Deteksi Perintah Cepat
-        function detectLocalCommand(text) {
-            const low = text.toLowerCase();
-            if (low.includes('nyalakan lampu')) toggleDevice('lampu', true);
-            if (low.includes('matikan lampu')) toggleDevice('lampu', false);
-            if (low.includes('nyalakan tv')) toggleDevice('tv', true);
-            if (low.includes('matikan tv')) toggleDevice('tv', false);
-            if (low.includes('nyalakan kulkas')) toggleDevice('kulkas', true);
-            if (low.includes('matikan kulkas')) toggleDevice('kulkas', false);
-            if (low.includes('nyalakan mesin cuci')) toggleDevice('mesin_cuci', true);
-            if (low.includes('matikan mesin cuci')) toggleDevice('mesin_cuci', false);
-            if (low.includes('nyalakan ac')) toggleDevice('ac', true);
-            if (low.includes('matikan ac')) toggleDevice('ac', false);
-            if (low.includes('nyalakan radio')) toggleDevice('radio', true);
-            if (low.includes('matikan radio')) toggleDevice('radio', false);
-            if (low.includes('nyalakan semua')) bulkSetAllDevices('ON');
-            if (low.includes('matikan semua')) bulkSetAllDevices('OFF');
+        function checkLocalIntent(txt) {
+            const low = txt.toLowerCase();
+            if (low.includes('nyalakan lampu')) updateDeviceState('lampu', true);
+            if (low.includes('matikan lampu')) updateDeviceState('lampu', false);
+            if (low.includes('nyalakan tv')) updateDeviceState('tv', true);
+            if (low.includes('matikan tv')) updateDeviceState('tv', false);
+            if (low.includes('nyalakan kulkas')) updateDeviceState('kulkas', true);
+            if (low.includes('matikan kulkas')) updateDeviceState('kulkas', false);
+            if (low.includes('nyalakan mesin cuci')) updateDeviceState('mesin_cuci', true);
+            if (low.includes('matikan mesin cuci')) updateDeviceState('mesin_cuci', false);
+            if (low.includes('nyalakan ac')) updateDeviceState('ac', true);
+            if (low.includes('matikan ac')) updateDeviceState('ac', false);
+            if (low.includes('nyalakan radio')) updateDeviceState('radio', true);
+            if (low.includes('matikan radio')) updateDeviceState('radio', false);
+            if (low.includes('nyalakan semua')) bulkUpdateAll('ON');
+            if (low.includes('matikan semua')) bulkUpdateAll('OFF');
         }
 
-        // Respons Cerdas Lokal Jika n8n belum aktif
-        function generateSmartFallback(text) {
-            const low = text.toLowerCase();
+        function getSmartFallback(txt) {
+            const low = txt.toLowerCase();
             if (low.includes('suhu') || low.includes('derajat')) {
-                return `Suhu ruangan saat ini adalah ${currentSensors.suhu} derajat Celcius, dan kondisi ruangan terpantau normal.`;
+                return `Suhu ruangan saat ini ${sensors.suhu} derajat Celcius, kondisi ruangan dalam batas nyaman.`;
             } else if (low.includes('kelembaban') || low.includes('lembab')) {
-                return `Kelembaban udara saat ini terukur ${currentSensors.kelembaban} persen.`;
+                return `Kelembaban udara saat ini terukur ${sensors.kelembaban} persen.`;
             } else if (low.includes('jarak')) {
-                return `Sensor ultrasonik membaca jarak halangan sejauh ${currentSensors.jarak} sentimeter.`;
+                return `Sensor ultrasonik membaca jarak halangan sejauh ${sensors.jarak} sentimeter.`;
             } else if (low.includes('lampu')) {
-                return `Baik Nabilah, status lampu utama berhasil diperbarui.`;
+                return `Baik Nabilah, lampu utama berhasil diperbarui.`;
             } else if (low.includes('ac')) {
                 return `Pendingin ruangan AC berhasil dikendalikan.`;
             } else if (low.includes('semua')) {
-                return `Instruksi diterima, seluruh enam peralatan elektronik telah diperbarui serentak.`;
+                return `Instruksi diterima, seluruh enam peralatan elektronik diperbarui serentak.`;
             } else {
-                return `Halo Nabilah, data sensor membaca suhu ${currentSensors.suhu} derajat Celcius, kelembaban ${currentSensors.kelembaban} persen, dan seluruh peralatan rumah siap dikendalikan.`;
+                return `Halo Nabilah, telemetri sensor membaca suhu ${sensors.suhu} derajat Celcius dan kelembaban ${sensors.kelembaban} persen. Semua alat siap dikendalikan.`;
             }
         }
 
         // --- TEXT TO SPEECH (SUARA BAHASA INDONESIA) ---
-        function speakResponse(text) {
-            const cleanText = text.replace(/[*#_`~()><\-]/g, ' ');
+        function speakVoice(text) {
+            const clean = text.replace(/[*#_`~()><\-]/g, ' ');
             synth.cancel();
 
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            utterance.lang = 'id-ID';
+            const utter = new SpeechSynthesisUtterance(clean);
+            utter.lang = 'id-ID';
 
-            // Pilih suara id-ID jika tersedia
             const voices = synth.getVoices();
             const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
-            if (idVoice) utterance.voice = idVoice;
+            if (idVoice) utter.voice = idVoice;
 
-            utterance.rate = 1.0;
-            utterance.pitch = 1.05; // Suara ramah natural
+            utter.rate = 1.0;
+            utter.pitch = 1.05;
 
-            utterance.onstart = () => {
+            utter.onstart = () => {
                 isSpeaking = true;
-                setVoiceState('speaking', 'Lamban AI sedang berbicara...');
-                document.getElementById('stop-speech-btn').style.display = 'inline-block';
+                setVoiceTag('speaking', 'Lamban AI berbicara...');
             };
 
-            utterance.onend = () => {
+            utter.onend = () => {
                 isSpeaking = false;
-                setVoiceState('standby', 'Siap Mendengarkan');
-                document.getElementById('stop-speech-btn').style.display = 'none';
+                setVoiceTag('standby', 'Siap Mendengarkan');
             };
 
-            utterance.onerror = () => {
+            utter.onerror = () => {
                 isSpeaking = false;
-                setVoiceState('standby', 'Siap Mendengarkan');
-                document.getElementById('stop-speech-btn').style.display = 'none';
+                setVoiceTag('standby', 'Siap Mendengarkan');
             };
 
-            synth.speak(utterance);
+            synth.speak(utter);
         }
 
-        function stopAiSpeech() {
-            synth.cancel();
-            isSpeaking = false;
-            setVoiceState('standby', 'Siap Mendengarkan');
-            document.getElementById('stop-speech-btn').style.display = 'none';
-        }
-
-        function appendChat(role, message) {
-            const box = document.getElementById('chat-box');
-            const bubble = document.createElement('div');
-            bubble.className = `chat-bubble chat-${role}`;
+        function appendChatLog(role, message) {
+            const box = document.getElementById('chat-container');
+            const row = document.createElement('div');
+            row.className = 'chat-row';
 
             if (role === 'user') {
-                bubble.innerText = message;
+                row.innerHTML = `<span class="chat-user">Nabilah: </span><span>${message}</span>`;
             } else {
-                bubble.innerHTML = `<b>Lamban AI:</b> ${message}`;
+                row.innerHTML = `<span class="chat-ai">Lamban AI: </span><span>${message}</span>`;
             }
 
-            box.appendChild(bubble);
+            box.appendChild(row);
             box.scrollTop = box.scrollHeight;
         }
 
-        // Load voices saat browser siap
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = () => synth.getVoices();
         }

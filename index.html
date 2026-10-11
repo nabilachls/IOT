@@ -1384,15 +1384,21 @@
 
         function getBestVoice() {
             const voices = cachedVoices.length ? cachedVoices : synth.getVoices();
-            // Prioritaskan suara asli Bahasa Indonesia (id-ID)
-            const idVoices = voices.filter(v => v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('indonesia'));
-            if (idVoices.length > 0) {
-                const premium = idVoices.find(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Gadis') || v.name.includes('Ardi'));
-                if (premium) return premium;
-                return idVoices[0];
-            }
-            // Fallback suara default sistem dengan lang id-ID
-            return voices.find(v => v.lang.startsWith('id')) || voices[0];
+            // 1. Prioritaskan suara asli Bahasa Indonesia WANITA (Gadis / Google Bahasa Indonesia)
+            const idFemale = voices.find(v => (v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('indonesia')) && 
+                (v.name.toLowerCase().includes('gadis') || v.name.toLowerCase().includes('google') || !v.name.toLowerCase().includes('ardi')));
+            if (idFemale) return idFemale;
+
+            // 2. Cari suara Bahasa Indonesia apa saja
+            const idAny = voices.find(v => v.lang.toLowerCase().includes('id') || v.lang.toLowerCase().includes('indonesia'));
+            if (idAny) return idAny;
+
+            // 3. Jika tidak ada bahasa Indonesia di OS, pilih suara WANITA (Zira / Aria / Jenny) dan jangan pilih David
+            const femaleVoice = voices.find(v => v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('aria') || v.name.toLowerCase().includes('jenny'));
+            if (femaleVoice) return femaleVoice;
+
+            const notDavid = voices.find(v => !v.name.toLowerCase().includes('david'));
+            return notDavid || voices[0];
         }
 
         function updateState(state) {
@@ -1703,12 +1709,44 @@
             processUserVoiceCommand(text);
         }
 
-        // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA) ---
+        // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA WANITA) ---
         function speakText(text) {
             isAiSpeaking = true;
-            synth.resume();
             synth.cancel();
 
+            // 1. Prioritaskan Audio TTS Bahasa Indonesia Suara Wanita Google (Sangat Fasih & Jernih)
+            const clean = text.replace(/[*#_`~()><\-]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (clean.length > 0 && clean.length < 200) {
+                try {
+                    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(clean)}`;
+                    const audio = new Audio(audioUrl);
+                    ttsDebug.innerText = "[ BICARA: SUARA WANITA (ID) ]";
+                    ttsDebug.style.color = "var(--green)";
+
+                    audio.onended = () => {
+                        isAiSpeaking = false;
+                        ttsDebug.innerText = "[ TTS: STANDBY ]";
+                        updateState('STANDBY');
+                    };
+                    audio.onerror = () => {
+                        speakBrowserTTS(clean);
+                    };
+
+                    const p = audio.play();
+                    if (p !== undefined) {
+                        p.catch(() => speakBrowserTTS(clean));
+                    }
+                    return;
+                } catch (e) {
+                    // Fallback
+                }
+            }
+            speakBrowserTTS(clean);
+        }
+
+        function speakBrowserTTS(text) {
+            synth.resume();
+            synth.cancel();
             const chunks = text.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [text];
             let index = 0;
 
@@ -1721,11 +1759,12 @@
                 }
 
                 const utterance = new SpeechSynthesisUtterance(chunks[index]);
-                utterance.lang = 'id-ID'; // Wajib Bahasa Indonesia
+                utterance.lang = 'id-ID';
                 const voice = getBestVoice();
                 if (voice) utterance.voice = voice;
 
-                utterance.pitch = 1.0;
+                // Nada wanita (pitch 1.15)
+                utterance.pitch = 1.15;
                 utterance.rate = 1.0;
                 utterance.volume = 1;
 

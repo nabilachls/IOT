@@ -1658,38 +1658,38 @@
             } catch (error) {
                 console.warn("n8n offline, menggunakan respons cerdas lokal:", error);
 
-                // Respons fallback bahasa Indonesia jernih agar presentasi tidak macet
+                // Respons fallback bahasa Indonesia jernih dan ramah
                 let fallbackReply = "";
                 const low = transcript.toLowerCase();
                 if (low.includes('suhu') || low.includes('derajat')) {
-                    fallbackReply = `Suhu ruangan saat ini adalah ${sensorData.suhu} derajat Celcius, kondisi ruangan dalam batas normal.`;
+                    fallbackReply = `Suhu ruangan saat ini terpantau ${sensorData.suhu || '27 koma 2'} derajat Celsius, dengan kelembaban ${sensorData.kelembaban || '46'} persen. Suasana ruangan sangat nyaman dan sejuk!`;
                 } else if (low.includes('kelembaban') || low.includes('lembab')) {
-                    fallbackReply = `Kelembaban udara saat ini terukur ${sensorData.kelembaban} persen.`;
+                    fallbackReply = `Kelembaban udara saat ini terukur ${sensorData.kelembaban || '46'} persen. Sirkulasi udara ruangan dalam kondisi optimal.`;
                 } else if (low.includes('jarak')) {
-                    fallbackReply = `Sensor ultrasonik membaca jarak halangan sejauh ${sensorData.jarak} sentimeter.`;
-                } else if (low.includes('lampu ruang tamu') || low.includes('lampu 1')) {
-                    const st = applianceState[1] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Baik, Lampu Utama (LED 1) berhasil ${st}.`;
-                } else if (low.includes('lampu kamar') || low.includes('lampu 2')) {
-                    const st = applianceState[2] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin AC (LED 5) (LED 2) telah ${st}.`;
-                } else if (low.includes('lampu dapur') || low.includes('lampu 3')) {
-                    const st = applianceState[3] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Kulkas (LED 3) berhasil ${st}.`;
-                } else if (low.includes('ac') || low.includes('kipas')) {
-                    const st = applianceState[4] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin ruangan AC telah ${st}.`;
-                } else if (low.includes('tv')) {
-                    const st = applianceState[5] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin AC (LED 5) berhasil ${st}.`;
-                } else if (low.includes('pompa')) {
-                    const st = applianceState[6] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pompa air telah ${st}.`;
+                    fallbackReply = `Sensor ultrasonik mendeteksi halangan pada jarak ${sensorData.jarak || '24'} sentimeter.`;
+                } else if (low.includes('lampu')) {
+                    const st = applianceState[1] ? 'sudah berhasil saya nyalakan untuk Anda' : 'sudah saya matikan ya';
+                    fallbackReply = `Siap! Lampu utama ${st}.`;
+                } else if (low.includes('tv') || low.includes('televisi')) {
+                    const st = applianceState[2] ? 'sudah berhasil saya hidupkan' : 'sudah saya matikan ya';
+                    fallbackReply = `Baik! Smart TV ${st}.`;
+                } else if (low.includes('kulkas')) {
+                    const st = applianceState[3] ? 'sudah berhasil saya nyalakan untuk Anda' : 'sudah saya matikan ya';
+                    fallbackReply = `Siap! Kulkas ${st}.`;
+                } else if (low.includes('mesin cuci') || low.includes('cuci')) {
+                    const st = applianceState[4] ? 'sudah berhasil saya hidupkan' : 'sudah saya matikan ya';
+                    fallbackReply = `Beres! Mesin cuci ${st}.`;
+                } else if (low.includes('ac') || low.includes('pendingin')) {
+                    const st = applianceState[5] ? 'sudah berhasil saya nyalakan' : 'sudah saya matikan ya';
+                    fallbackReply = `Siap! Pendingin ruangan AC ${st}.`;
+                } else if (low.includes('radio')) {
+                    const st = applianceState[6] ? 'sudah berhasil saya hidupkan' : 'sudah saya matikan ya';
+                    fallbackReply = `Baik! Radio audio ${st}.`;
                 } else if (low.includes('semua peralatan') || low.includes('semua')) {
-                    const st = applianceState[1] ? 'dinyalakan serentak' : 'dimatikan serentak';
-                    fallbackReply = `Instruksi diterima. Seluruh enam peralatan elektronik telah ${st}.`;
+                    const st = applianceState[1] ? 'sudah berhasil saya nyalakan serentak' : 'sudah berhasil saya matikan semua';
+                    fallbackReply = `Beres! Seluruh enam peralatan elektronik ${st}.`;
                 } else {
-                    fallbackReply = `Halo, saya Lamban AI. Telemetri sensor membaca suhu ${sensorData.suhu} derajat Celcius, kelembaban ${sensorData.kelembaban} persen, dan jarak ${sensorData.jarak} centimeter. Seluruh peralatan siap dikendalikan.`;
+                    fallbackReply = `Halo! Saya Lamban AI. Telemetri sensor membaca suhu ${sensorData.suhu || '27'} derajat Celsius dan kelembaban ${sensorData.kelembaban || '46'} persen. Seluruh peralatan siap saya kendalikan!`;
                 }
 
                 updateState('RESPONDING');

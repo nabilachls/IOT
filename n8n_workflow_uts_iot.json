@@ -73,7 +73,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://localhost:3000/api/sensor",
+        "url": "https://iot-puce-nine.vercel.app/api/sensor",
         "description": "Gunakan tool ini untuk membaca data sensor realtime: suhu ruangan (°C), kelembaban udara (%), dan jarak objek (cm) yang dikirim ESP32.",
         "options": {
           "allowUnauthorizedCerts": true
@@ -91,7 +91,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:3000/api/led",
+        "url": "https://iot-puce-nine.vercel.app/api/led",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { \"alat\": $fromAI(\"alat\", \"Nama peralatan yang dikendalikan (lampu, tv, kulkas, mesin_cuci, ac, radio)\"), \"status\": $fromAI(\"status\", \"Status yang diinginkan: ON atau OFF\") } }}",

@@ -30,7 +30,7 @@ const char* password = "PASSWORD_WIFI_ANDA";
 // 2. URL API Vercel / Server Lokal
 // Contoh jika Vercel: "https://iot-uts-api.vercel.app/api"
 // Contoh jika Local (satu Wi-Fi): "http://192.168.1.XX:3000/api"
-const char* serverApiUrl = "https://NAMA_PROJECT_ANDA.vercel.app/api";
+const char* serverApiUrl = "https://iot-puce-nine.vercel.app/api";
 
 // 3. Konfigurasi Sensor DHT11
 #define DHTPIN 4

@@ -32,22 +32,22 @@ const char* password = "PASSWORD_WIFI_ANDA";
 // Contoh jika Local (satu Wi-Fi): "http://192.168.1.XX:3000/api"
 const char* serverApiUrl = "https://iot-puce-nine.vercel.app/api";
 
-// 3. Konfigurasi Sensor DHT11
+// 3. Konfigurasi Sensor DHT22 (Suhu & Kelembaban)
 #define DHTPIN 4
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
 // 4. Konfigurasi Sensor Ultrasonik HC-SR04
 #define TRIG_PIN 5
 #define ECHO_PIN 18
 
-// 5. Konfigurasi 6 Pin LED (Peralatan)
-#define PIN_LED_LAMPU       16
-#define PIN_LED_TV          17
-#define PIN_LED_KULKAS      23
-#define PIN_LED_MESIN_CUCI  19
-#define PIN_LED_AC          21
-#define PIN_LED_RADIO       22
+// 5. Konfigurasi 6 Pin LED (Peralatan Listrik)
+#define PIN_LED_LAMPU       19  // LED 1: D19
+#define PIN_LED_TV          21  // LED 2: D21
+#define PIN_LED_KULKAS      22  // LED 3: D22
+#define PIN_LED_MESIN_CUCI  23  // LED 4: D23
+#define PIN_LED_AC          25  // LED 5: D25
+#define PIN_LED_RADIO       26  // LED 6: D26
 
 unsigned long lastTime = 0;
 const unsigned long timerDelay = 3000; // Kirim dan baca data setiap 3 detik

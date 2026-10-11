@@ -28,17 +28,17 @@ Sistem asisten AI berbasis suara yang terintegrasi dengan alur kerja **n8n**, mo
 
 ## 🔌 Pinout Hardware (ESP32)
 
-| Komponen | Pin Hardware | Pin ESP32 | Keterangan |
+| Komponen | Pin Hardware | Pin ESP32 | Keterangan & Daya |
 | :--- | :--- | :--- | :--- |
-| **DHT11** | DATA | `GPIO 4` | Sensor Suhu & Kelembaban |
-| **Ultrasonik (HC-SR04)** | TRIG | `GPIO 5` | Trigger Pulse |
-| **Ultrasonik (HC-SR04)** | ECHO | `GPIO 18` | Echo Pulse |
-| **LED 1 (Lampu)** | ANODA (+) | `GPIO 16` | Kontrol Lampu |
-| **LED 2 (TV)** | ANODA (+) | `GPIO 17` | Kontrol Televisi |
-| **LED 3 (Kulkas)** | ANODA (+) | `GPIO 23` | Kontrol Kulkas |
-| **LED 4 (Mesin Cuci)** | ANODA (+) | `GPIO 19` | Kontrol Mesin Cuci |
-| **LED 5 (AC)** | ANODA (+) | `GPIO 21` | Kontrol Pendingin Ruangan |
-| **LED 6 (Radio)** | ANODA (+) | `GPIO 22` | Kontrol Radio |
+| **DHT22** | DATA | `D4 (GPIO 4)` | VCC ke `3V3`, GND ke Breadboard |
+| **Ultrasonik (HC-SR04)** | TRIG | `D5 (GPIO 5)` | VCC ke `VIN`, GND ke Breadboard |
+| **Ultrasonik (HC-SR04)** | ECHO | `D18 (GPIO 18)` | Echo Pulse |
+| **LED 1 (Lampu)** | ANODA (+) | `D19 (GPIO 19)` | Kontrol Lampu |
+| **LED 2 (TV)** | ANODA (+) | `D21 (GPIO 21)` | Kontrol Televisi |
+| **LED 3 (Kulkas)** | ANODA (+) | `D22 (GPIO 22)` | Kontrol Kulkas |
+| **LED 4 (Mesin Cuci)** | ANODA (+) | `D23 (GPIO 23)` | Kontrol Mesin Cuci |
+| **LED 5 (AC)** | ANODA (+) | `D25 (GPIO 25)` | Kontrol Pendingin Ruangan |
+| **LED 6 (Radio)** | ANODA (+) | `D26 (GPIO 26)` | Kontrol Radio Audio |
 
 ---
 

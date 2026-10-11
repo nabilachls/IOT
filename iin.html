@@ -952,7 +952,7 @@
         const interruptBtn = document.getElementById('interrupt-btn');
         const aiResponse = document.getElementById('ai-response');
         const aiStatus = document.getElementById('ai-status');
-        const micStatus = document.getElementById('mic-status');
+        const micStatus = document.getElementById('mic-debug-status');
         const ttsDebug = document.getElementById('tts-debug');
         const coreVisualizer = document.getElementById('core-visualizer');
         const coreOrb = document.getElementById('core-orb');
@@ -1409,41 +1409,61 @@
 
         function updateState(state) {
             currentState = state;
-            aiStatus.innerText = state;
-            coreVisualizer.className = 'jarvis-core-container';
+            if (aiStatus) aiStatus.innerText = state;
+            if (coreVisualizer) {
+                coreVisualizer.className = 'jarvis-core-container';
+                if (state === 'LISTENING') coreVisualizer.classList.add('state-listening');
+                else if (state === 'THINKING') coreVisualizer.classList.add('state-thinking');
+            }
 
             if (state === 'LISTENING') {
-                coreVisualizer.classList.add('state-listening');
-                micStatus.innerText = "MENDENGARKAN...";
-                micStatus.style.color = "var(--green)";
-                talkBtn.innerText = "🔴 MIC AKTIF (KLIK UTK MATIKAN)";
-                talkBtn.classList.add('recording');
-                talkBtn.disabled = false;
-                interruptBtn.style.display = "none";
-            } else if (state === 'THINKING') {
-                coreVisualizer.classList.add('state-thinking');
-                micStatus.innerText = "PROSES N8N...";
-                micStatus.style.color = "var(--cyan)";
-                talkBtn.innerText = "⏳ MEMPROSES PERINTAH...";
-                talkBtn.classList.remove('recording');
-                talkBtn.disabled = false;
-                interruptBtn.style.display = "none";
-            } else if (state === 'RESPONDING') {
-                talkBtn.innerText = "🔊 LAMBAN-AI SEDANG MENJAWAB...";
-                talkBtn.classList.remove('recording');
-                talkBtn.disabled = false;
-                interruptBtn.style.display = "block";
-            } else {
-                micStatus.innerText = "STANDBY";
-                micStatus.style.color = "var(--orange)";
-                talkBtn.innerText = isMicAlwaysOn ? "🔴 MIC AKTIF (ALWAYS-ON)" : "🎙️ TEKAN UNTUK MENGAKTIFKAN MIC";
-                if (isMicAlwaysOn) {
-                    talkBtn.classList.add('recording');
-                } else {
-                    talkBtn.classList.remove('recording');
+                if (micStatus) {
+                    micStatus.innerText = "MENDENGARKAN...";
+                    micStatus.style.color = "var(--green)";
                 }
-                talkBtn.disabled = false;
-                interruptBtn.style.display = "none";
+                if (talkBtn) {
+                    talkBtn.innerText = "🔴 MIC AKTIF (KLIK UTK MATIKAN)";
+                    talkBtn.classList.add('recording');
+                    talkBtn.disabled = false;
+                }
+                if (interruptBtn) interruptBtn.style.display = "none";
+            } else if (state === 'THINKING') {
+                if (micStatus) {
+                    micStatus.innerText = "PROSES N8N...";
+                    micStatus.style.color = "var(--cyan)";
+                }
+                if (talkBtn) {
+                    talkBtn.innerText = "⏳ MEMPROSES PERINTAH...";
+                    talkBtn.classList.remove('recording');
+                    talkBtn.disabled = false;
+                }
+                if (interruptBtn) interruptBtn.style.display = "none";
+            } else if (state === 'RESPONDING') {
+                if (micStatus) {
+                    micStatus.innerText = "MENJAWAB...";
+                    micStatus.style.color = "var(--gold)";
+                }
+                if (talkBtn) {
+                    talkBtn.innerText = "🔊 LAMBAN-AI SEDANG MENJAWAB...";
+                    talkBtn.classList.remove('recording');
+                    talkBtn.disabled = false;
+                }
+                if (interruptBtn) interruptBtn.style.display = "block";
+            } else {
+                if (micStatus) {
+                    micStatus.innerText = "STANDBY";
+                    micStatus.style.color = "var(--orange)";
+                }
+                if (talkBtn) {
+                    talkBtn.innerText = isMicAlwaysOn ? "🔴 MIC AKTIF (ALWAYS-ON)" : "🎙️ TEKAN UNTUK MENGAKTIFKAN MIC";
+                    if (isMicAlwaysOn) {
+                        talkBtn.classList.add('recording');
+                    } else {
+                        talkBtn.classList.remove('recording');
+                    }
+                    talkBtn.disabled = false;
+                }
+                if (interruptBtn) interruptBtn.style.display = "none";
             }
         }
 

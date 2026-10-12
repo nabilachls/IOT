@@ -1506,6 +1506,7 @@
 
         // --- KLIK TOMBOL BICARA: SEKALI KLIK MIC TERUS HIDUP SAMPAI DIKLIK MATI ---
         talkBtn.addEventListener('click', async () => {
+            hasSpokenGreeting = true;
             dismissBootScreenQuick();
             // Unlock audio & SpeechSynthesis di Chrome
             try {
@@ -1567,7 +1568,22 @@
             }
         });
 
-        // --- BOOT EVENT HANDLER CEPAT ---
+        // --- BOOT EVENT & SUARA SAMBUTAN AWAL ---
+        let hasSpokenGreeting = false;
+
+        function playGreetingVoice() {
+            if (hasSpokenGreeting) return;
+            hasSpokenGreeting = true;
+            try {
+                if (window.speechSynthesis) window.speechSynthesis.resume();
+            } catch(e) {}
+
+            const greetingText = "Halo! Selamat datang di sistem Lamban AI. Telemetri sensor dan kontrol peralatan listrik siap digunakan.";
+            setTimeout(() => {
+                speakText(greetingText);
+            }, 300);
+        }
+
         function dismissBootScreenQuick() {
             const bs = document.getElementById('boot-screen');
             if (bs && bs.style.display !== 'none') {
@@ -1576,8 +1592,7 @@
                 setTimeout(() => { bs.style.display = 'none'; }, 250);
             }
             try {
-                synth.resume();
-                synth.cancel();
+                if (synth) synth.resume();
             } catch(e) {}
         }
 
@@ -1605,11 +1620,21 @@
             }
             updateState('STANDBY');
             updateApplianceUI();
+
+            // Putar suara sambutan awal
+            playGreetingVoice();
         }
 
         if (bootScreen) {
             bootScreen.addEventListener('click', dismissBootScreen);
         }
+
+        // Juga putar sambutan saat pengguna pertama kali berinteraksi di halaman jika boot screen tidak diklik langsung
+        document.addEventListener('click', (e) => {
+            if (!hasSpokenGreeting && e.target !== talkBtn) {
+                playGreetingVoice();
+            }
+        }, { once: true });
 
         // --- CLIENT-SIDE INTENT HELPER (Instant UI & Hardware Response) ---
         function executeLocalApplianceIntent(text) {

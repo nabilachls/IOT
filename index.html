@@ -1531,12 +1531,8 @@
             }
 
             // Jika AI sedang berbicara, hentikan suara
-            if (isAiSpeaking || currentAudioPlayer) {
-                if (currentAudioPlayer) {
-                    try { currentAudioPlayer.pause(); } catch(e){}
-                    currentAudioPlayer = null;
-                }
-                try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
+            if (isAiSpeaking) {
+                try { if (synth) synth.cancel(); } catch(e) {}
                 isAiSpeaking = false;
                 ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
             }
@@ -1559,11 +1555,7 @@
         });
 
         interruptBtn.addEventListener('click', () => {
-            if (currentAudioPlayer) {
-                try { currentAudioPlayer.pause(); } catch(e){}
-                currentAudioPlayer = null;
-            }
-            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
+            try { if (synth) synth.cancel(); } catch(e) {}
             isAiSpeaking = false;
             isAiThinking = false;
             ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
@@ -1804,142 +1796,96 @@
 
         // Simulasi tombol cepat
         function simulateVoice(text) {
+            try { if (synth) synth.resume(); } catch(e){}
             processUserVoiceCommand(text);
         }
 
-        // --- PEMBACA SUARA ALAMI BAHASA INDONESIA (STREAMING AUDIO TTS) ---
-        let currentAudioPlayer = null;
+        // --- PEMBACA SUARA TEXT TO SPEECH (BAHASA INDONESIA - ORIGINAL CHUNKED ENGINE) ---
+        window._activeUtterances = [];
 
         function speakText(text) {
-            const cleanText = (text || '').replace(/[*#_`~()><\-]/g, ' ').replace(/\s+/g, ' ').trim();
-            if (!cleanText) {
+            if (!text || text.trim().length === 0) {
                 isAiSpeaking = false;
-                isAiThinking = false;
-                if (isMicAlwaysOn) {
-                    isMicActive = true;
-                    safeStartRecognition();
-                } else {
-                    updateState('STANDBY');
-                }
+                if (isMicAlwaysOn) setTimeout(() => safeStartRecognition(), 300);
+                else updateState('STANDBY');
                 return;
             }
 
             isAiSpeaking = true;
-            isAiThinking = false;
+            safeStopRecognition(); // Berhenti dengar saat AI bicara agar tidak feedback
             updateState('RESPONDING');
-            safeStopRecognition(); // Berhenti dengar saat AI bicara
 
-            if (ttsDebug) {
-                ttsDebug.innerText = "[ AI BICARA: AKTIF ]";
-                ttsDebug.style.color = "var(--green)";
-            }
+            try {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.resume();
+                    window.speechSynthesis.cancel();
+                }
+            } catch(e) {}
 
             // Bunyikan nada beep respon halus
             try { playAudioBeep(660, 0.08); } catch(e) {}
 
-            let isFinished = false;
-            function finishSpeaking() {
-                if (isFinished) return;
-                isFinished = true;
-                if (currentAudioPlayer) {
-                    try { currentAudioPlayer.pause(); } catch(e){}
-                    currentAudioPlayer = null;
-                }
-                isAiSpeaking = false;
-                isAiThinking = false;
-                if (ttsDebug) {
-                    ttsDebug.innerText = "[ SUARA: SELESAI ]";
-                    ttsDebug.style.color = "var(--cyan)";
+            const cleanText = text.replace(/[*#_`~()><\-]/g, ' ').replace(/\s+/g, ' ').trim();
+            const chunks = cleanText.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [cleanText];
+            let index = 0;
+
+            function speakNextChunk() {
+                if (index >= chunks.length) {
+                    isAiSpeaking = false;
+                    window._activeUtterances = [];
+                    if (ttsDebug) {
+                        ttsDebug.innerText = "[ SUARA: SELESAI ]";
+                        ttsDebug.style.color = "var(--cyan)";
+                    }
+                    if (isMicAlwaysOn) {
+                        setTimeout(() => {
+                            safeStartRecognition();
+                        }, 300);
+                    } else {
+                        updateState('STANDBY');
+                    }
+                    return;
                 }
 
-                if (isMicAlwaysOn) {
-                    setTimeout(() => {
-                        isMicActive = true;
-                        safeStartRecognition();
-                    }, 350);
-                } else {
-                    updateState('STANDBY');
-                }
+                const utterance = new SpeechSynthesisUtterance(chunks[index]);
+                utterance.lang = 'id-ID'; // Wajib Bahasa Indonesia
+                const voice = getBestVoice();
+                if (voice) utterance.voice = voice;
+
+                utterance.pitch = 1.0;
+                utterance.rate = 1.0;
+                utterance.volume = 1.0;
+
+                // Simpan agar tidak terhapus V8 garbage collector
+                window._activeUtterances = [utterance];
+
+                utterance.onstart = () => {
+                    if (ttsDebug) {
+                        ttsDebug.innerText = `[ BICARA: ${index + 1}/${chunks.length} ]`;
+                        ttsDebug.style.color = "var(--green)";
+                    }
+                };
+
+                utterance.onend = () => {
+                    index++;
+                    speakNextChunk();
+                };
+
+                utterance.onerror = (err) => {
+                    console.warn("Utterance info:", err);
+                    index++;
+                    speakNextChunk();
+                };
+
+                synth.speak(utterance);
+
+                // Chrome unfreeze hack
+                setTimeout(() => {
+                    if (synth.paused) synth.resume();
+                }, 80);
             }
 
-            // Hentikan pemutaran audio sebelumnya jika ada
-            if (currentAudioPlayer) {
-                try { currentAudioPlayer.pause(); } catch(e){}
-                currentAudioPlayer = null;
-            }
-
-            // 1. Prioritaskan Server TTS Endpoint (Suara Asli Bahasa Indonesia Alami)
-            const ttsEndpoint = `/api/tts?text=${encodeURIComponent(cleanText.slice(0, 240))}`;
-            const audio = new Audio(ttsEndpoint);
-            currentAudioPlayer = audio;
-
-            // Watchdog durasi maksimal
-            const maxDuration = Math.max(9000, cleanText.length * 160);
-            const watchdog = setTimeout(() => {
-                console.warn("TTS watchdog trigger: forcing finish");
-                finishSpeaking();
-            }, maxDuration);
-
-            audio.onplay = () => {
-                if (ttsDebug) {
-                    ttsDebug.innerText = "[ AI BICARA: SUARA INDONESIA ]";
-                    ttsDebug.style.color = "var(--green)";
-                }
-            };
-
-            audio.onended = () => {
-                clearTimeout(watchdog);
-                finishSpeaking();
-            };
-
-            audio.onerror = (err) => {
-                clearTimeout(watchdog);
-                console.warn("Audio TTS stream error, beralih ke speechSynthesis:", err);
-                fallbackBrowserTTS(cleanText, finishSpeaking);
-            };
-
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    clearTimeout(watchdog);
-                    console.warn("Autoplay audio blocked atau error, beralih ke speechSynthesis:", err);
-                    fallbackBrowserTTS(cleanText, finishSpeaking);
-                });
-            }
-        }
-
-        // Fallback jika audio stream gagal
-        function fallbackBrowserTTS(cleanText, onDone) {
-            if (!('speechSynthesis' in window)) {
-                onDone();
-                return;
-            }
-            try {
-                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-                window.speechSynthesis.cancel();
-            } catch(e) {}
-
-            setTimeout(() => {
-                try {
-                    const u = new SpeechSynthesisUtterance(cleanText);
-                    u.lang = 'id-ID';
-                    const v = getBestVoice();
-                    if (v) u.voice = v;
-                    u.pitch = 1.0;
-                    u.rate = 1.0;
-                    window._activeUtterances = [u];
-
-                    u.onend = () => onDone();
-                    u.onerror = () => onDone();
-
-                    window.speechSynthesis.speak(u);
-                    setTimeout(() => {
-                        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-                    }, 80);
-                } catch(e) {
-                    onDone();
-                }
-            }, 60);
+            speakNextChunk();
         }
     </script>
 </body>

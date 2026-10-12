@@ -8,7 +8,33 @@ let ledState = {
     radio: "OFF"
 };
 
-export default function handler(req, res) {
+const CLOUD_STORE_URL = 'https://api.restful-api.dev/objects/ff808181a09d98f701a12d910d37427c';
+
+// Sinkronisasi dengan cloud storage agar state tidak hilang saat Vercel cold-start
+async function syncCloudStore(newState = null) {
+    try {
+        if (newState) {
+            await fetch(CLOUD_STORE_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'uts_iot_led', data: newState })
+            });
+            Object.assign(ledState, newState);
+        } else {
+            const res = await fetch(CLOUD_STORE_URL);
+            if (res.ok) {
+                const json = await res.json();
+                if (json && json.data) {
+                    Object.assign(ledState, json.data);
+                }
+            }
+        }
+    } catch (e) {
+        // Fallback in-memory
+    }
+}
+
+export default async function handler(req, res) {
     // Header CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,6 +48,9 @@ export default function handler(req, res) {
         res.status(200).end();
         return;
     }
+
+    // Ambil state tersimpan terbaru dari cloud store
+    await syncCloudStore();
 
     let body = req.body || {};
     if (typeof body === 'string') {
@@ -49,7 +78,7 @@ export default function handler(req, res) {
         }
     }
 
-    // Aksi 1: Ubah status jika ada status yang dikirimkan (baik via POST maupun GET)
+    // Aksi 1: Ubah status spesifik
     if (targetAlat && (targetStatus === 'ON' || targetStatus === 'OFF' || targetStatus === '1' || targetStatus === '0')) {
         let key = targetAlat;
         if (key.includes('mesin') || key.includes('cuci')) key = 'mesin_cuci';
@@ -61,6 +90,7 @@ export default function handler(req, res) {
 
         if (ledState[key] !== undefined) {
             ledState[key] = (targetStatus === 'ON' || targetStatus === '1') ? 'ON' : 'OFF';
+            await syncCloudStore(ledState);
             return res.status(200).json({
                 status: "success",
                 pesan: `${key} berhasil diubah menjadi ${ledState[key]}`,
@@ -75,6 +105,7 @@ export default function handler(req, res) {
     if (body.all !== undefined || query.all !== undefined) {
         const allSt = (((body.all || query.all).toUpperCase() === 'ON') || (body.all === '1')) ? 'ON' : 'OFF';
         Object.keys(ledState).forEach(k => ledState[k] = allSt);
+        await syncCloudStore(ledState);
         return res.status(200).json({
             status: "success",
             pesan: `Seluruh 6 peralatan telah diubah menjadi ${allSt}`,
@@ -92,6 +123,7 @@ export default function handler(req, res) {
     });
 
     if (changed) {
+        await syncCloudStore(ledState);
         return res.status(200).json({
             status: "success",
             pesan: "Status peralatan berhasil diperbarui",
@@ -121,3 +153,4 @@ export default function handler(req, res) {
         peralatan: ledState
     });
 }
+

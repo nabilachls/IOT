@@ -1095,13 +1095,18 @@
             }
         }
 
+        let lastLocalLedChangeTime = 0;
+
         // --- FETCH REALTIME STATUS 6 LED DARI /api/led ---
         async function fetchRealLedData() {
+            // Lindungi state: jangan timpa dengan data lama jika user baru saja memberi perintah dalam 8 detik terakhir
+            if (Date.now() - lastLocalLedChangeTime < 8000) return;
+
             try {
                 const res = await fetch('https://iot-puce-nine.vercel.app/api/led');
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.peralatan) {
+                    if (data.peralatan && (Date.now() - lastLocalLedChangeTime >= 8000)) {
                         for (let id = 1; id <= 6; id++) {
                             const key = applianceKeys[id];
                             if (data.peralatan[key] !== undefined) {
@@ -1147,6 +1152,7 @@
 
         async function toggleAppliance(id) {
             const key = applianceKeys[id];
+            lastLocalLedChangeTime = Date.now();
             applianceState[id] = !applianceState[id];
             updateApplianceUI();
             playAudioBeep(applianceState[id] ? 880 : 440, 0.1);
@@ -1172,6 +1178,7 @@
         }
 
         async function setAllAppliances(state) {
+            lastLocalLedChangeTime = Date.now();
             const isTargetOn = (state === 'ON');
             for (let id = 1; id <= 6; id++) {
                 applianceState[id] = isTargetOn;
@@ -1269,9 +1276,9 @@
         const micDebugStatus = document.getElementById('mic-debug-status');
 
         function safeStartRecognition() {
-            if (!recognition || (!isMicAlwaysOn && !isMicActive) || isAiSpeaking || isAiThinking) return;
+            if (!recognition) return;
+            if (isAiSpeaking || isAiThinking) return;
             if (isRecognitionRunning) return;
-            if (currentState === 'THINKING' || currentState === 'RESPONDING') return;
 
             try {
                 accumulatedTranscript = '';
@@ -1546,7 +1553,7 @@
                     micStatus.style.color = "var(--gold)";
                 }
                 if (talkBtn) {
-                    talkBtn.innerText = "🔊 LAMBAN-AI SEDANG MENJAWAB...";
+                    talkBtn.innerText = "🔊 AI SEDANG BICARA (KLIK UTK BICARA)";
                     talkBtn.classList.remove('recording');
                     talkBtn.disabled = false;
                 }
@@ -1557,12 +1564,8 @@
                     micStatus.style.color = "var(--orange)";
                 }
                 if (talkBtn) {
-                    talkBtn.innerText = isMicAlwaysOn ? "🔴 MIC AKTIF (ALWAYS-ON)" : "🎙️ TEKAN UNTUK MENGAKTIFKAN MIC";
-                    if (isMicAlwaysOn) {
-                        talkBtn.classList.add('recording');
-                    } else {
-                        talkBtn.classList.remove('recording');
-                    }
+                    talkBtn.innerText = "🎙️ TEKAN UNTUK BICARA";
+                    talkBtn.classList.remove('recording');
                     talkBtn.disabled = false;
                 }
                 if (interruptBtn) interruptBtn.style.display = "none";
@@ -1606,68 +1609,61 @@
             }, 60);
         }
 
-        // --- KLIK TOMBOL BICARA: SEKALI KLIK MIC TERUS HIDUP SAMPAI DIKLIK MATI ---
+        // --- KLIK TOMBOL BICARA: SELALU RESPONSIF UNTUK BICARA ATAU STOP ---
         talkBtn.addEventListener('click', async () => {
             hasSpokenGreeting = true;
             dismissBootScreenQuick();
+            clearTimeout(window._ttsWatchdogTimer);
+
             // Unlock audio & SpeechSynthesis di Chrome
             try {
                 if (window.speechSynthesis) {
                     window.speechSynthesis.resume();
+                    if (isAiSpeaking) window.speechSynthesis.cancel();
                 }
             } catch(e) {}
+
+            isAiSpeaking = false;
+            isAiThinking = false;
 
             if (!recognition) {
                 alert("Browser Anda belum mendukung Speech Recognition. Silakan buka di Google Chrome atau Microsoft Edge.");
                 return;
             }
 
-            // Jika mode mic sedang aktif, klik ini mematikan mikrofon
-            if (isMicAlwaysOn || isMicActive) {
+            // Jika sedang dalam kondisi MENDENGARKAN (LISTENING), klik ini mematikan mic (STANDBY)
+            if (currentState === 'LISTENING') {
                 isMicAlwaysOn = false;
                 isMicActive = false;
                 safeStopRecognition();
                 updateState('STANDBY');
-                aiResponse.innerHTML = `<span style="color:var(--orange)">[Mikrofon Dimatikan]</span> Tekan tombol mikrofon jika ingin mengaktifkan mode dengar kembali.`;
+                aiResponse.innerHTML = `<span style="color:var(--orange)">[Mikrofon Dimatikan]</span> Klik tombol "TEKAN UNTUK BICARA" jika ingin berbicara kembali.`;
                 playAudioBeep(400, 0.1);
                 return;
             }
 
-            // Jika AI sedang berbicara, hentikan suara
-            if (isAiSpeaking) {
-                try { if (synth) synth.cancel(); } catch(e) {}
-                isAiSpeaking = false;
-                ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
-            }
-
-            // AKTIFKAN MODE DENGAR TERUS-MENERUS
+            // JIKA SEDANG STANDBY / RESPONDING: KLIK LANGSUNG AKTIFKAN MODE DENGAR!
             isMicAlwaysOn = true;
             isMicActive = true;
-            isAiThinking = false;
-            isAiSpeaking = false;
             playAudioBeep(750, 0.15);
 
-            // Buka akses audio & synth saat gesture klik pengguna aktif
-            try { if (synth) synth.resume(); } catch(e){}
             try { await setupAudioMeter(); } catch(e){}
 
-            aiResponse.innerHTML = `<span style="color:var(--green)">[Mikrofon Aktif]:</span> Mode dengar selalu aktif. Silakan berbicara kapan saja (misal: "Nyalakan lampu" atau "Cek suhu")...`;
+            aiResponse.innerHTML = `<span style="color:var(--green)">[Mikrofon Aktif]:</span> Silakan berbicara langsung (contoh: "Nyalakan lampu" atau "Cek suhu")...`;
 
             updateState('LISTENING');
             safeStartRecognition();
         });
 
         interruptBtn.addEventListener('click', () => {
+            clearTimeout(window._ttsWatchdogTimer);
             try { if (synth) synth.cancel(); } catch(e) {}
             isAiSpeaking = false;
             isAiThinking = false;
             ttsDebug.innerText = "[ SUARA: DIHENTIKAN ]";
-            if (isMicAlwaysOn) {
-                isMicActive = true;
-                safeStartRecognition();
-            } else {
-                updateState('STANDBY');
-            }
+            isMicActive = true;
+            updateState('LISTENING');
+            safeStartRecognition();
         });
 
         // --- BOOT EVENT & SUARA SAMBUTAN AWAL ---
@@ -1801,6 +1797,7 @@
             }
 
             if (touched) {
+                lastLocalLedChangeTime = Date.now();
                 updateApplianceUI();
                 playAudioBeep(targetState ? 880 : 440, 0.1);
 
@@ -1973,18 +1970,37 @@
             const chunks = cleanText.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [cleanText];
             let index = 0;
 
+            // Watchdog timer: jika Chrome TTS macet atau tidak memicu onend, paksa kembali ke LISTENING
+            const maxDurationMs = Math.max(5000, chunks.length * 3500);
+            clearTimeout(window._ttsWatchdogTimer);
+            window._ttsWatchdogTimer = setTimeout(() => {
+                if (isAiSpeaking || currentState === 'RESPONDING') {
+                    console.log("[TTS WATCHDOG] Me-reset status mic setelah respon audio selesai.");
+                    isAiSpeaking = false;
+                    isAiThinking = false;
+                    window._activeUtterances = [];
+                    isMicActive = true;
+                    updateState('LISTENING');
+                    safeStartRecognition();
+                }
+            }, maxDurationMs);
+
             function speakNextChunk() {
                 if (index >= chunks.length) {
+                    clearTimeout(window._ttsWatchdogTimer);
                     isAiSpeaking = false;
+                    isAiThinking = false;
                     window._activeUtterances = [];
                     if (ttsDebug) {
                         ttsDebug.innerText = "[ SUARA: SELESAI ]";
                         ttsDebug.style.color = "var(--cyan)";
                     }
                     if (isMicAlwaysOn) {
+                        isMicActive = true;
+                        updateState('LISTENING');
                         setTimeout(() => {
                             safeStartRecognition();
-                        }, 300);
+                        }, 400);
                     } else {
                         updateState('STANDBY');
                     }

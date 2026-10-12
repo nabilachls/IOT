@@ -354,10 +354,53 @@
             font-size: 0.92em;
             color: #fff;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .appliance-pin {
             font-size: 0.7em;
             color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 3px;
+        }
+        .led-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #36071d;
+            border: 1px solid #661035;
+            transition: all 0.25s ease;
+        }
+        .appliance-card.active .led-dot {
+            background: var(--green);
+            border-color: #fff;
+            box-shadow: 0 0 8px var(--green), 0 0 16px var(--green);
+            animation: led-glow-pulse 1.2s infinite alternate;
+        }
+        @keyframes led-glow-pulse {
+            0% { transform: scale(0.95); opacity: 0.85; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+        .hardware-led-badge {
+            font-size: 0.68em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(255, 42, 133, 0.12);
+            border: 1px solid rgba(255, 42, 133, 0.25);
+            color: var(--gold);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+        }
+        .appliance-card.active .hardware-led-badge {
+            background: rgba(0, 255, 102, 0.18);
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.35);
         }
 
         /* Toggle switch */
@@ -799,11 +842,15 @@
 
                 <div class="quick-commands">
                     <span style="font-size:0.7em; color:#888; align-self:center;">Perintah Cepat:</span>
-                    <button class="cmd-chip" onclick="simulateVoice('Berapa suhu dan kelembaban sekarang?')">"Suhu & Kelembaban"</button>
-                    <button class="cmd-chip" onclick="simulateVoice('Cek jarak sensor sekarang')">"Cek Jarak"</button>
-                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan lampu ruang tamu')">"Lampu 1 ON"</button>
-                    <button class="cmd-chip" onclick="simulateVoice('Matikan lampu ruang tamu')">"Lampu 1 OFF"</button>
-                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan semua peralatan')">"Semua ON"</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan lampu')">💡 Nyalakan Lampu LED</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Matikan lampu')">🌙 Matikan Lampu LED</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan TV')">📺 TV (LED 2)</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan kulkas')">🧊 Kulkas (LED 3)</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan AC')">❄️ AC (LED 5)</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Nyalakan semua peralatan')">⚡ Semua LED ON</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Matikan semua peralatan')">🌙 Semua LED OFF</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Berapa suhu dan kelembaban sekarang?')">🌡️ Cek Suhu</button>
+                    <button class="cmd-chip" onclick="simulateVoice('Cek jarak sensor sekarang')">📏 Cek Jarak</button>
                 </div>
             </div>
         </div>
@@ -811,7 +858,7 @@
         <!-- RIGHT COLUMN: 6 PERALATAN ELEKTRONIK CONTROLLER -->
         <div class="panel">
             <div class="panel-header">
-                <span>6 PERALATAN ELEKTRONIK</span>
+                <span>6 PERALATAN ELEKTRONIK (LED ESP32)</span>
                 <span class="badge" id="active-count">0/6 AKTIF</span>
             </div>
 
@@ -820,9 +867,15 @@
                 <div class="appliance-card" id="card-1">
                     <div class="appliance-info">
                         <div class="appliance-icon">💡</div>
-                        <div>
-                            <div class="appliance-title">Lampu Utama</div>
-                            <div class="appliance-pin">LED 1 • GPIO 19</div>
+                        <div style="flex-grow:1;">
+                            <div class="appliance-title">
+                                <span>Lampu Utama</span>
+                                <span class="hardware-led-badge" id="led-badge-1">LED 1 OFF</span>
+                            </div>
+                            <div class="appliance-pin">
+                                <span class="led-dot" id="led-dot-1"></span>
+                                <span>LED 1 • GPIO 19</span>
+                            </div>
                         </div>
                     </div>
                     <div class="switch-container">
@@ -835,9 +888,15 @@
                 <div class="appliance-card" id="card-2">
                     <div class="appliance-info">
                         <div class="appliance-icon">📺</div>
-                        <div>
-                            <div class="appliance-title">Smart TV</div>
-                            <div class="appliance-pin">LED 2 • GPIO 21</div>
+                        <div style="flex-grow:1;">
+                            <div class="appliance-title">
+                                <span>Smart TV</span>
+                                <span class="hardware-led-badge" id="led-badge-2">LED 2 OFF</span>
+                            </div>
+                            <div class="appliance-pin">
+                                <span class="led-dot" id="led-dot-2"></span>
+                                <span>LED 2 • GPIO 21</span>
+                            </div>
                         </div>
                     </div>
                     <div class="switch-container">
@@ -850,9 +909,15 @@
                 <div class="appliance-card" id="card-3">
                     <div class="appliance-info">
                         <div class="appliance-icon">🧊</div>
-                        <div>
-                            <div class="appliance-title">Kulkas</div>
-                            <div class="appliance-pin">LED 3 • GPIO 22</div>
+                        <div style="flex-grow:1;">
+                            <div class="appliance-title">
+                                <span>Kulkas</span>
+                                <span class="hardware-led-badge" id="led-badge-3">LED 3 OFF</span>
+                            </div>
+                            <div class="appliance-pin">
+                                <span class="led-dot" id="led-dot-3"></span>
+                                <span>LED 3 • GPIO 22</span>
+                            </div>
                         </div>
                     </div>
                     <div class="switch-container">
@@ -865,9 +930,15 @@
                 <div class="appliance-card" id="card-4">
                     <div class="appliance-info">
                         <div class="appliance-icon">🧺</div>
-                        <div>
-                            <div class="appliance-title">Mesin Cuci</div>
-                            <div class="appliance-pin">LED 4 • GPIO 23</div>
+                        <div style="flex-grow:1;">
+                            <div class="appliance-title">
+                                <span>Mesin Cuci</span>
+                                <span class="hardware-led-badge" id="led-badge-4">LED 4 OFF</span>
+                            </div>
+                            <div class="appliance-pin">
+                                <span class="led-dot" id="led-dot-4"></span>
+                                <span>LED 4 • GPIO 23</span>
+                            </div>
                         </div>
                     </div>
                     <div class="switch-container">
@@ -880,9 +951,15 @@
                 <div class="appliance-card" id="card-5">
                     <div class="appliance-info">
                         <div class="appliance-icon">❄️</div>
-                        <div>
-                            <div class="appliance-title">Pendingin AC</div>
-                            <div class="appliance-pin">LED 5 • GPIO 25</div>
+                        <div style="flex-grow:1;">
+                            <div class="appliance-title">
+                                <span>Pendingin AC</span>
+                                <span class="hardware-led-badge" id="led-badge-5">LED 5 OFF</span>
+                            </div>
+                            <div class="appliance-pin">
+                                <span class="led-dot" id="led-dot-5"></span>
+                                <span>LED 5 • GPIO 25</span>
+                            </div>
                         </div>
                     </div>
                     <div class="switch-container">
@@ -895,9 +972,15 @@
                 <div class="appliance-card" id="card-6">
                     <div class="appliance-info">
                         <div class="appliance-icon">📻</div>
-                        <div>
-                            <div class="appliance-title">Radio Audio</div>
-                            <div class="appliance-pin">LED 6 • GPIO 26</div>
+                        <div style="flex-grow:1;">
+                            <div class="appliance-title">
+                                <span>Radio Audio</span>
+                                <span class="hardware-led-badge" id="led-badge-6">LED 6 OFF</span>
+                            </div>
+                            <div class="appliance-pin">
+                                <span class="led-dot" id="led-dot-6"></span>
+                                <span>LED 6 • GPIO 26</span>
+                            </div>
                         </div>
                     </div>
                     <div class="switch-container">
@@ -1040,18 +1123,23 @@
         fetchRealLedData();
 
         // --- 3. APPLIANCE CONTROLLER LOGIC (TERHUBUNG KE /api/led) ---
+        const appliancePins = ['', 'GPIO 19', 'GPIO 21', 'GPIO 22', 'GPIO 23', 'GPIO 25', 'GPIO 26'];
+
         function updateApplianceUI() {
             let count = 0;
             for (let id = 1; id <= 6; id++) {
                 const card = document.getElementById(`card-${id}`);
                 const stateTxt = document.getElementById(`state-${id}`);
+                const badge = document.getElementById(`led-badge-${id}`);
                 if (applianceState[id]) {
                     if (card) card.classList.add('active');
                     if (stateTxt) stateTxt.innerText = 'ON';
+                    if (badge) badge.innerText = `● LED ${id} ON (${appliancePins[id]})`;
                     count++;
                 } else {
                     if (card) card.classList.remove('active');
                     if (stateTxt) stateTxt.innerText = 'OFF';
+                    if (badge) badge.innerText = `LED ${id} OFF`;
                 }
             }
             if (activeCount) activeCount.innerText = `${count}/6 AKTIF`;
@@ -1061,7 +1149,7 @@
             const key = applianceKeys[id];
             applianceState[id] = !applianceState[id];
             updateApplianceUI();
-            playAudioBeep(applianceState[id] ? 880 : 440);
+            playAudioBeep(applianceState[id] ? 880 : 440, 0.1);
 
             try {
                 await fetch('https://iot-puce-nine.vercel.app/api/led', {
@@ -1069,7 +1157,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         alat: key,
-                        status: applianceState[id] ? 'ON' : 'OFF'
+                        status: applianceState[id] ? 'ON' : 'OFF',
+                        lampu: applianceState[1] ? 'ON' : 'OFF',
+                        tv: applianceState[2] ? 'ON' : 'OFF',
+                        kulkas: applianceState[3] ? 'ON' : 'OFF',
+                        mesin_cuci: applianceState[4] ? 'ON' : 'OFF',
+                        ac: applianceState[5] ? 'ON' : 'OFF',
+                        radio: applianceState[6] ? 'ON' : 'OFF'
                     })
                 });
             } catch (err) {
@@ -1083,13 +1177,21 @@
                 applianceState[id] = isTargetOn;
             }
             updateApplianceUI();
-            playAudioBeep(isTargetOn ? 900 : 300);
+            playAudioBeep(isTargetOn ? 900 : 300, 0.15);
 
             try {
                 await fetch('https://iot-puce-nine.vercel.app/api/led', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ all: state })
+                    body: JSON.stringify({
+                        all: state,
+                        lampu: state,
+                        tv: state,
+                        kulkas: state,
+                        mesin_cuci: state,
+                        ac: state,
+                        radio: state
+                    })
                 });
             } catch (err) {
                 console.warn("Gagal bulk update LED ke server:", err);
@@ -1638,61 +1740,71 @@
 
         // --- CLIENT-SIDE INTENT HELPER (Instant UI & Hardware Response) ---
         function executeLocalApplianceIntent(text) {
-            const low = text.toLowerCase();
+            if (!text) return false;
+            const low = text.toLowerCase().trim();
             let touched = false;
 
-            // 1: Lampu
-            if (low.includes('nyalakan lampu') || low.includes('hidupkan lampu') || low.includes('lampu on') || low.includes('lampu 1 on')) {
-                applianceState[1] = true; touched = true;
-            } else if (low.includes('matikan lampu') || low.includes('padamkan lampu') || low.includes('lampu off') || low.includes('lampu 1 off')) {
-                applianceState[1] = false; touched = true;
-            }
+            // Deteksi aksi ON / OFF
+            const wantsOn = (
+                low.includes('nyala') || low.includes('hidup') || low.includes(' on') || low.endsWith('on') ||
+                low.includes('buka') || low.includes('aktif') || low.includes('start') || low.includes('putar') ||
+                low.includes('terang') || low.includes('pijar')
+            );
+            const wantsOff = (
+                low.includes('mati') || low.includes('padam') || low.includes(' off') || low.endsWith('off') ||
+                low.includes('tutup') || low.includes('stop') || low.includes('nonaktif')
+            );
 
-            // 2: TV
-            if (low.includes('nyalakan tv') || low.includes('hidupkan tv') || low.includes('tv on')) {
-                applianceState[2] = true; touched = true;
-            } else if (low.includes('matikan tv') || low.includes('padamkan tv') || low.includes('tv off')) {
-                applianceState[2] = false; touched = true;
-            }
+            // Jika tidak ada kata eksplisit mati/padam, default adalah ON
+            const targetState = wantsOff ? false : true;
 
-            // 3: Kulkas
-            if (low.includes('nyalakan kulkas') || low.includes('hidupkan kulkas') || low.includes('kulkas on')) {
-                applianceState[3] = true; touched = true;
-            } else if (low.includes('matikan kulkas') || low.includes('padamkan kulkas') || low.includes('kulkas off')) {
-                applianceState[3] = false; touched = true;
-            }
-
-            // 4: Mesin Cuci
-            if (low.includes('nyalakan mesin cuci') || low.includes('hidupkan mesin cuci') || low.includes('mesin cuci on')) {
-                applianceState[4] = true; touched = true;
-            } else if (low.includes('matikan mesin cuci') || low.includes('padamkan mesin cuci') || low.includes('mesin cuci off')) {
-                applianceState[4] = false; touched = true;
-            }
-
-            // 5: AC
-            if (low.includes('nyalakan ac') || low.includes('hidupkan ac') || low.includes('ac on')) {
-                applianceState[5] = true; touched = true;
-            } else if (low.includes('matikan ac') || low.includes('padamkan ac') || low.includes('ac off')) {
-                applianceState[5] = false; touched = true;
-            }
-
-            // 6: Radio
-            if (low.includes('nyalakan radio') || low.includes('hidupkan radio') || low.includes('radio on')) {
-                applianceState[6] = true; touched = true;
-            } else if (low.includes('matikan radio') || low.includes('padamkan radio') || low.includes('radio off')) {
-                applianceState[6] = false; touched = true;
-            }
-
-            if (low.includes('nyalakan semua') || low.includes('hidupkan semua')) {
-                for (let i = 1; i <= 6; i++) applianceState[i] = true;
+            // Target: SEMUA peralatan
+            if (low.includes('semua') || low.includes('seluruh') || low.includes('all')) {
+                for (let i = 1; i <= 6; i++) applianceState[i] = targetState;
                 touched = true;
-            } else if (low.includes('matikan semua') || low.includes('padamkan semua')) {
-                for (let i = 1; i <= 6; i++) applianceState[i] = false;
+            }
+
+            // 1: Lampu / LED 1
+            if (low.includes('lampu') || low.includes('led 1') || low.includes('led1') || low.includes('led satu') || low.includes('penerangan') || low.includes('lamp') || (low.includes('led') && !low.includes('2') && !low.includes('3') && !low.includes('4') && !low.includes('5') && !low.includes('6'))) {
+                applianceState[1] = targetState;
+                touched = true;
+            }
+
+            // 2: TV / Smart TV / LED 2
+            if (low.includes('tv') || low.includes('televisi') || low.includes('led 2') || low.includes('led2') || low.includes('led dua') || low.includes('layar')) {
+                applianceState[2] = targetState;
+                touched = true;
+            }
+
+            // 3: Kulkas / Lemari Es / LED 3
+            if (low.includes('kulkas') || low.includes('lemari es') || low.includes('refrigerator') || low.includes('led 3') || low.includes('led3') || low.includes('led tiga')) {
+                applianceState[3] = targetState;
+                touched = true;
+            }
+
+            // 4: Mesin Cuci / Laundry / LED 4
+            if (low.includes('mesin cuci') || low.includes('cuci') || low.includes('laundry') || low.includes('washer') || low.includes('led 4') || low.includes('led4') || low.includes('led empat')) {
+                applianceState[4] = targetState;
+                touched = true;
+            }
+
+            // 5: AC / Pendingin / LED 5
+            if (low.includes('ac') || low.includes('pendingin') || low.includes('cooler') || low.includes('air conditioner') || low.includes('kipas') || low.includes('led 5') || low.includes('led5') || low.includes('led lima')) {
+                applianceState[5] = targetState;
+                touched = true;
+            }
+
+            // 6: Radio / Audio / LED 6
+            if (low.includes('radio') || low.includes('audio') || low.includes('musik') || low.includes('sound') || low.includes('led 6') || low.includes('led6') || low.includes('led enam')) {
+                applianceState[6] = targetState;
                 touched = true;
             }
 
             if (touched) {
                 updateApplianceUI();
+                playAudioBeep(targetState ? 880 : 440, 0.1);
+
+                // Sinkronisasi realtime ke API Vercel /api/led (dibaca ESP32 tiap 1.5 detik)
                 fetch('https://iot-puce-nine.vercel.app/api/led', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1704,12 +1816,15 @@
                         ac: applianceState[5] ? 'ON' : 'OFF',
                         radio: applianceState[6] ? 'ON' : 'OFF'
                     })
-                }).catch(e => console.warn(e));
+                }).then(r => r.json()).then(res => {
+                    console.log("[API LED] Sinkronisasi Berhasil:", res);
+                }).catch(e => console.warn("[API LED] Gagal sinkron:", e));
             }
+
             return touched;
         }
 
-        // --- KIRIM PERINTAH KE N8N WEBHOOK ---
+        // --- KIRIM PERINTAH KE N8N WEBHOOK & EKSEKUSI SEGERA ---
         async function processUserVoiceCommand(transcript) {
             if (isAiThinking || isAiSpeaking) return;
 
@@ -1725,17 +1840,54 @@
             safeStopRecognition();
             updateState('THINKING');
 
-            // Eksekusi kontrol perangkat lokal secara instan
+            // 1. Eksekusi kontrol perangkat lokal secara instan (UI & Vercel API /api/led)
             const touched = executeLocalApplianceIntent(transcript);
 
             aiResponse.innerHTML = `<span style="color:#fff">Pengguna:</span> <b>"${transcript}"</b><br><br><span style="color:var(--cyan); opacity:0.8;">Mengirim instruksi ke n8n webhook...</span>`;
 
             const targetUrl = webhookUrlInput.value.trim() || 'http://localhost:5678/webhook/jarvis-chat';
 
+            function getFallbackResponse() {
+                const low = transcript.toLowerCase();
+                if (low.includes('suhu') || low.includes('derajat')) {
+                    const s = sensorData.suhu !== null ? sensorData.suhu : 'sedang membaca dari ESP32';
+                    const k = sensorData.kelembaban !== null ? sensorData.kelembaban : 'normal';
+                    return `Suhu ruangan saat ini adalah ${s} derajat Celsius dan kelembaban ${k} persen.`;
+                } else if (low.includes('kelembaban') || low.includes('lembab')) {
+                    const k = sensorData.kelembaban !== null ? sensorData.kelembaban : 'normal';
+                    return `Kelembaban udara saat ini terukur ${k} persen.`;
+                } else if (low.includes('jarak')) {
+                    const j = sensorData.jarak !== null ? sensorData.jarak : 'normal';
+                    return `Sensor ultrasonik membaca jarak halangan sejauh ${j} sentimeter.`;
+                } else if (low.includes('lampu') || (low.includes('led') && !low.includes('2') && !low.includes('3') && !low.includes('4') && !low.includes('5') && !low.includes('6'))) {
+                    const st = applianceState[1] ? 'dinyalakan' : 'dimatikan';
+                    return `Siap! Lampu utama telah berhasil ${st} dan LED 1 pada pin D19 telah menyala.`;
+                } else if (low.includes('tv') || low.includes('televisi') || low.includes('led 2')) {
+                    const st = applianceState[2] ? 'dinyalakan' : 'dimatikan';
+                    return `Baik, Smart TV telah ${st} dan LED 2 pada pin D21 aktif.`;
+                } else if (low.includes('kulkas') || low.includes('led 3')) {
+                    const st = applianceState[3] ? 'dinyalakan' : 'dimatikan';
+                    return `Kulkas telah berhasil ${st} dan LED 3 pada pin D22 aktif.`;
+                } else if (low.includes('mesin cuci') || low.includes('cuci') || low.includes('led 4')) {
+                    const st = applianceState[4] ? 'dinyalakan' : 'dimatikan';
+                    return `Mesin cuci telah ${st} dan LED 4 pada pin D23 aktif.`;
+                } else if (low.includes('ac') || low.includes('pendingin') || low.includes('led 5')) {
+                    const st = applianceState[5] ? 'dinyalakan' : 'dimatikan';
+                    return `Pendingin ruangan AC telah ${st} dan LED 5 pada pin D25 aktif.`;
+                } else if (low.includes('radio') || low.includes('audio') || low.includes('led 6')) {
+                    const st = applianceState[6] ? 'dinyalakan' : 'dimatikan';
+                    return `Radio audio telah ${st} dan LED 6 pada pin D26 aktif.`;
+                } else if (low.includes('semua')) {
+                    const st = applianceState[1] ? 'dinyalakan serentak' : 'dimatikan serentak';
+                    return `Seluruh enam peralatan elektronik telah berhasil ${st}.`;
+                }
+                return `Baik, instruksi Anda "${transcript}" telah berhasil saya proses.`;
+            }
+
             try {
-                // Timeout 12 detik untuk webhook n8n agar Gemini Flash Lite memiliki waktu memproses
+                // Timeout 6 detik agar responsif
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 12000);
+                const timeoutId = setTimeout(() => controller.abort(), 6000);
 
                 const response = await fetch(targetUrl, {
                     method: 'POST',
@@ -1760,8 +1912,11 @@
                 }
 
                 const data = await response.json();
-                let aiText = data.reply || data.output || data.text || "Instruksi diproses.";
-                const cleanText = aiText.replace(/[*#_`~()><\-]/g, ' ');
+                let aiText = data.reply || data.output || data.text || getFallbackResponse();
+                const cleanText = aiText.replace(/[*#_`~()><\-]/g, ' ').trim();
+
+                // Pastikan status peralatan sinkron dengan respon n8n
+                executeLocalApplianceIntent(cleanText);
 
                 isAiThinking = false;
                 updateState('RESPONDING');
@@ -1771,46 +1926,10 @@
                 speakText(cleanText);
 
             } catch (error) {
-                console.warn("n8n webhook timeout atau belum merespons, memicu asisten cerdas lokal:", error);
+                console.warn("n8n webhook timeout atau error, memicu asisten cerdas lokal:", error);
                 isAiThinking = false;
 
-                let fallbackReply = "";
-                const low = transcript.toLowerCase();
-                if (low.includes('suhu') || low.includes('derajat')) {
-                    const s = sensorData.suhu !== null ? sensorData.suhu : 'belum terhubung dari ESP32';
-                    const k = sensorData.kelembaban !== null ? sensorData.kelembaban : 'belum terhubung';
-                    fallbackReply = `Suhu ruangan saat ini adalah ${s} derajat Celsius dan kelembaban ${k} persen.`;
-                } else if (low.includes('kelembaban') || low.includes('lembab')) {
-                    const k = sensorData.kelembaban !== null ? sensorData.kelembaban : 'belum terhubung';
-                    fallbackReply = `Kelembaban udara saat ini terukur ${k} persen.`;
-                } else if (low.includes('jarak')) {
-                    const j = sensorData.jarak !== null ? sensorData.jarak : 'belum terhubung';
-                    fallbackReply = `Sensor ultrasonik membaca jarak halangan sejauh ${j} sentimeter.`;
-                } else if (low.includes('lampu')) {
-                    const st = applianceState[1] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Siap! Lampu utama telah berhasil ${st}.`;
-                } else if (low.includes('tv') || low.includes('televisi')) {
-                    const st = applianceState[2] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Baik, Smart TV telah ${st}.`;
-                } else if (low.includes('kulkas')) {
-                    const st = applianceState[3] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Kulkas telah berhasil ${st}.`;
-                } else if (low.includes('mesin cuci') || low.includes('cuci')) {
-                    const st = applianceState[4] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Mesin cuci telah ${st}.`;
-                } else if (low.includes('ac') || low.includes('pendingin')) {
-                    const st = applianceState[5] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Pendingin ruangan AC telah ${st}.`;
-                } else if (low.includes('radio')) {
-                    const st = applianceState[6] ? 'dinyalakan' : 'dimatikan';
-                    fallbackReply = `Radio audio telah ${st}.`;
-                } else if (low.includes('semua peralatan') || low.includes('semua')) {
-                    const st = applianceState[1] ? 'dinyalakan serentak' : 'dimatikan serentak';
-                    fallbackReply = `Seluruh enam peralatan elektronik telah ${st}.`;
-                } else {
-                    fallbackReply = `Halo! Saya Lamban AI. Telemetri sensor dan enam peralatan listrik siap dikendalikan.`;
-                }
-
+                const fallbackReply = getFallbackResponse();
                 updateState('RESPONDING');
                 aiResponse.innerHTML = `<span style="color:#fff">Pengguna:</span> <b>"${transcript}"</b><br><br><span style="color:var(--orange)">LAMBAN-AI:</span><br>${fallbackReply}`;
                 aiResponse.scrollTop = aiResponse.scrollHeight;

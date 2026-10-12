@@ -74,7 +74,11 @@ export default async function handler(req, res) {
         else if (rawText.includes('semua')) body.all = rawText.includes('mati') ? 'OFF' : 'ON';
 
         if (!targetStatus) {
-            targetStatus = (rawText.includes('mati') || rawText.includes('padam') || rawText.includes('off')) ? 'OFF' : 'ON';
+            const isOff = rawText.includes('mati') || rawText.includes('padam') || rawText.includes('off') || rawText.includes('tutup');
+            const isOn = rawText.includes('nyala') || rawText.includes('hidup') || rawText.includes('on') || rawText.includes('aktif') || rawText.includes('buka');
+            if (isOff) targetStatus = 'OFF';
+            else if (isOn) targetStatus = 'ON';
+            else targetStatus = ''; // Jangan default ke ON jika tidak ada perintah aksi eksplisit
         }
     }
 

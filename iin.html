@@ -1740,7 +1740,7 @@
             const low = text.toLowerCase().trim();
             let touched = false;
 
-            // Deteksi aksi ON / OFF
+            // Deteksi aksi ON / OFF secara eksplisit
             const wantsOn = (
                 low.includes('nyala') || low.includes('hidup') || low.includes(' on') || low.endsWith('on') ||
                 low.includes('buka') || low.includes('aktif') || low.includes('start') || low.includes('putar') ||
@@ -1751,8 +1751,12 @@
                 low.includes('tutup') || low.includes('stop') || low.includes('nonaktif')
             );
 
-            // Jika tidak ada kata eksplisit mati/padam, default adalah ON
-            const targetState = wantsOff ? false : true;
+            // WAJIB ADA KATA PERINTAH AKSI! Jika tidak ada instruksi nyalakan atau matikan, abaikan!
+            if (!wantsOn && !wantsOff) {
+                return false;
+            }
+
+            const targetState = wantsOn;
 
             // Target: SEMUA peralatan
             if (low.includes('semua') || low.includes('seluruh') || low.includes('all')) {
@@ -1911,9 +1915,6 @@
                 const data = await response.json();
                 let aiText = data.reply || data.output || data.text || getFallbackResponse();
                 const cleanText = aiText.replace(/[*#_`~()><\-]/g, ' ').trim();
-
-                // Pastikan status peralatan sinkron dengan respon n8n
-                executeLocalApplianceIntent(cleanText);
 
                 isAiThinking = false;
                 updateState('RESPONDING');
